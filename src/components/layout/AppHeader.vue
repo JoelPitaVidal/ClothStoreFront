@@ -4,14 +4,13 @@
       <button class="menu-btn" @click="$emit('toggle-sidebar')">
         <span></span><span></span><span></span>
       </button>
+      <button class="mode-toggle" @click="toggleMode">
+        {{ isDark ? '🌙' : '☀️' }}
+      </button>
       <RouterLink to="/" class="logo">
         ✦ <span>Midnight Attire</span>
       </RouterLink>
     </div>
-
-    <button class="mode-toggle" @click="toggleMode">
-      {{ isDark ? '🌙' : '☀️' }}
-    </button>
 
     <nav class="header-nav">
       <RouterLink to="/">Inicio</RouterLink>
