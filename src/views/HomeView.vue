@@ -51,7 +51,7 @@
   margin-top: -70px; 
   
   /* 3. Aseguramos que la imagen cubra todo el espacio */
-  background-image: url('https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=2070');
+  background-image: url('');
   background-size: cover;
   background-position: center;
   background-attachment: fixed; /* Efecto Parallax: la imagen se queda quieta al scrollear */

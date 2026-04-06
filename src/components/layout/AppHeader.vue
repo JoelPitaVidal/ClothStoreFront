@@ -9,6 +9,10 @@
       </RouterLink>
     </div>
 
+    <button class="mode-toggle" @click="toggleMode">
+      {{ isDark ? '🌙' : '☀️' }}
+    </button>
+
     <nav class="header-nav">
       <RouterLink to="/">Inicio</RouterLink>
       <RouterLink to="/productos">Tienda</RouterLink>
@@ -44,7 +48,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useCartStore } from '@/stores/cart'
@@ -69,6 +73,18 @@ function cerrarSesion() {
   menuOpen.value = false
   router.push('/login')
 }
+
+const isDark = ref(true)
+
+function toggleMode() {
+  isDark.value = !isDark.value
+  if (!isDark.value) {
+    document.body.classList.add('light-mode')
+  } else {
+    document.body.classList.remove('light-mode')
+  }
+}
+
 </script>
 
 <style scoped>
@@ -219,4 +235,20 @@ function cerrarSesion() {
 @media (max-width: 768px) {
   .header-nav, .user-name { display: none; }
 }
+
+.mode-toggle {
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text-primary);
+  padding: 0.4rem;
+  cursor: pointer;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  transition: var(--transition);
+}
+.mode-toggle:hover {
+  border-color: var(--accent-bright);
+  background: var(--bg-hover);
+}
+
 </style>
