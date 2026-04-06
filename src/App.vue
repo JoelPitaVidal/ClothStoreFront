@@ -1,11 +1,30 @@
-<script setup></script>
-
 <template>
-  <h1>You did it!</h1>
-  <p>
-    Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
-    documentation
-  </p>
+  <div class="app-layout">
+    <AppHeader @toggle-sidebar="sidebarOpen = !sidebarOpen" />
+    <main class="main-content">
+      <RouterView />
+    </main>
+  </div>
 </template>
 
-<style scoped></style>
+<script setup>
+import { ref } from 'vue'
+import AppHeader from '@/components/layout/AppHeader.vue'
+
+const sidebarOpen = ref(false)
+</script>
+
+<style>
+.app-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  margin-top: var(--header-height);
+  margin-left: var(--sidebar-width);
+  padding: 2rem;
+  flex: 1;
+}
+</style>

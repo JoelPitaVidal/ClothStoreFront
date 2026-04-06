@@ -1,0 +1,152 @@
+/* Importación de fuentes temáticas */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Quicksand:wght@300;400;600&display=swap');
+
+:root {
+  /* Paleta de Colores - Midnight Attire */
+  --bg-dark: #050505;           /* Negro absoluto */
+  --bg-panel: #0f0a14;          /* Morado "Noche" profundo */
+  --bg-card: #160f1d;           /* Morado ceniza */
+  --accent: #7b2dab;            /* Morado místico */
+  --accent-bright: #b34bff;     /* Morado neón/eléctrico */
+  --accent-glow: rgba(123, 45, 171, 0.5);
+  
+  /* Textos */
+  --text-primary: #e0d5e8;      /* Blanco violáceo */
+  --text-secondary: #a394ac;    /* Gris lila */
+  --text-dim: #6b5a75;
+  
+  /* Bordes y Sombras */
+  --border-light: rgba(179, 75, 255, 0.15);
+  --border-accent: rgba(179, 75, 255, 0.4);
+  --shadow-intense: 0 10px 40px rgba(0, 0, 0, 0.9), 0 0 20px rgba(123, 45, 171, 0.1);
+  --shadow-glow: 0 0 15px rgba(179, 75, 255, 0.3);
+
+  /* Dimensiones */
+  --header-height: 70px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  
+  /* Tipografías */
+  --font-gothic: 'Cinzel', serif;
+  --font-elegant: 'Quicksand', sans-serif;
+  
+  /* Transiciones */
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Configuración Base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  font-family: var(--font-elegant);
+  line-height: 1.6;
+  min-height: 100vh;
+  /* Textura de fondo sutil */
+  background-image: 
+    radial-gradient(circle at 50% 0%, #1a0b2e 0%, #050505 100%);
+  overflow-x: hidden;
+}
+
+/* Títulos con estilo Gótico */
+h1, h2, h3, h4, .title-gothic {
+  font-family: var(--font-gothic);
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--text-primary);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  margin-bottom: 1.5rem;
+}
+
+h1 { font-size: 2.5rem; color: var(--accent-bright); }
+
+/* Enlaces */
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+/* Botones con Estilo Intenso */
+.btn-primary {
+  background: linear-gradient(135deg, #7b2dab, #4c1a6a);
+  color: white;
+  border: 1px solid var(--accent-bright);
+  padding: 0.8rem 1.8rem;
+  font-family: var(--font-gothic);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  transition: var(--transition);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px var(--accent-glow);
+  filter: brightness(1.2);
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  padding: 0.8rem 1.8rem;
+  font-family: var(--font-gothic);
+  transition: var(--transition);
+}
+
+.btn-ghost:hover {
+  border-color: var(--accent-bright);
+  color: var(--text-primary);
+  background: rgba(179, 75, 255, 0.05);
+}
+
+/* Contenedores y Tarjetas */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 2rem;
+  box-shadow: var(--shadow-intense);
+  transition: var(--transition);
+}
+
+.card:hover {
+  border-color: var(--border-accent);
+  transform: scale(1.01);
+}
+
+/* Barra de desplazamiento (Scrollbar) Estilo Oscuro */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-panel);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* Utilidades */
+.text-accent { color: var(--accent-bright); }
+.mt-header { margin-top: var(--header-height); }
+
+nav, ul, li {
+  list-style: none; /* Esto elimina los puntos automáticos de las listas */
+  list-style-type: none;
+}
