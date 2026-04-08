@@ -9,20 +9,22 @@
       <!-- RouterView cargará Login, Productos, Admin, etc. -->
       <RouterView />
     </main>
+
+    <!-- Añadimos el Footer aquí para que sea global -->
+    <AppFooter />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
+import AppFooter from '@/components/layout/AppFooter.vue' // Importación del componente
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
 const sidebarOpen = ref(false)
 
-// CRUCIAL: Cuando la aplicación se carga en el navegador
 onMounted(async () => {
-  // Si hay un token en el almacenamiento local, recuperamos los datos del usuario
   if (localStorage.getItem('token')) {
     await authStore.fetchUsuario()
   }
@@ -33,13 +35,17 @@ onMounted(async () => {
 /* Variables globales para mantener la coherencia gótica */
 :root {
   --header-height: 70px;
-  --sidebar-width: 0px; /* Cambiar a 250px si añades un sidebar fijo */
+  --sidebar-width: 0px; 
   --deep-black: #0a0a0a;
+  --bg-secondary: #0f0f0f; /* Añadida para el footer */
   --gothic-purple: #8121d0;
+  --accent: #8121d0;
+  --text-main: #e0d5e8;
   --text-soft: #a394ac;
+  --text-muted: #777;
+  --border: #1a1a1a;
 }
 
-/* Reset básico para que el fondo sea siempre oscuro */
 body {
   margin: 0;
   background-color: var(--deep-black);
@@ -47,20 +53,19 @@ body {
   font-family: 'Quicksand', sans-serif;
 }
 
+/* Layout con Flexbox para empujar el footer hacia abajo */
 .app-layout {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
 }
 
 .main-content {
-  /* margin-top asegura que el contenido no se esconda debajo del header fixed */
   margin-top: var(--header-height);
   padding: 2rem;
-  flex: 1;
+  /* flex: 1 hace que este contenedor crezca y empuje al footer al fondo */
+  flex: 1 0 auto; 
   transition: margin-left 0.3s ease;
-  
-  /* Centrado opcional para que el contenido no pegue a los bordes en pantallas gigantes */
   max-width: 1400px;
   width: 100%;
   margin-left: auto;
@@ -68,17 +73,20 @@ body {
   box-sizing: border-box;
 }
 
-/* Si en el futuro activas el sidebar, esto desplazará el contenido */
 .sidebar-active .main-content {
   margin-left: var(--sidebar-width);
 }
 
-/* Transiciones de página suaves */
+/* Títulos con fuente gótica para uso global */
+.title-gothic {
+  font-family: 'Cinzel', serif;
+}
+
+/* Transiciones */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
 }
-
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
