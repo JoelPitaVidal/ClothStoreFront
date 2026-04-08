@@ -20,48 +20,55 @@
     </nav>
 
     <div class="header-right">
-      <!-- Botón modo oscuro/claro junto al carrito -->
-      <button class="mode-toggle" @click="toggleMode">
+      <!-- MODO OSCURO/CLARO -->
+      <button class="mode-toggle" @click="toggleMode" :title="isDark ? 'Luz' : 'Sombras'">
         {{ isDark ? '🌙' : '☀️' }}
       </button>
 
-      <button class="cart-btn" @click="cartStore.fetchCarrito()">
+      <!-- BOTÓN DEL CARRITO (Redirige a /carrito) -->
+      <button class="cart-btn" @click="irAlCarrito" title="Ver mi alijo">
         <span class="cart-icon">🛒</span>
-        <span v-if="cartStore.totalItems > 0" class="cart-badge">{{ cartStore.totalItems }}</span>
+        <Transition name="pop">
+          <span v-if="cartStore.totalItems > 0" class="cart-badge">
+            {{ cartStore.totalItems }}
+          </span>
+        </Transition>
       </button>
 
-      <!-- SECCIÓN: USUARIO AUTENTICADO -->
+      <!-- USUARIO AUTENTICADO -->
       <div v-if="authStore.usuario" class="user-menu" @click="menuOpen = !menuOpen">
         <div class="avatar">{{ iniciales }}</div>
         <span class="user-name">{{ authStore.usuario.nombre }}</span>
         
-        <div v-if="menuOpen" class="dropdown">
-          <RouterLink to="/perfil" @click="menuOpen = false">Mi perfil</RouterLink>
-          <RouterLink to="/pedidos" @click="menuOpen = false">Mis pedidos</RouterLink>
-          
-          <template v-if="authStore.usuario.es_admin">
+        <Transition name="fade-drop">
+          <div v-if="menuOpen" class="dropdown">
+            <RouterLink to="/perfil" @click="menuOpen = false">Mi perfil</RouterLink>
+            <RouterLink to="/pedidos" @click="menuOpen = false">Mis pedidos</RouterLink>
+            
+            <template v-if="authStore.usuario.es_admin">
+              <hr class="divider" />
+              <RouterLink to="/admin" @click="menuOpen = false" class="admin-action">
+                Panel Admin †
+              </RouterLink>
+            </template>
+            
             <hr class="divider" />
-            <RouterLink to="/admin" @click="menuOpen = false" class="admin-action">
-              Añadir Producto †
-            </RouterLink>
-          </template>
-          
-          <hr class="divider" />
-          <button @click="cerrarSesion" class="logout-btn">Cerrar sesión</button>
-        </div>
+            <button @click="cerrarSesion" class="logout-btn">Cerrar sesión</button>
+          </div>
+        </Transition>
       </div>
 
-      <!-- SECCIÓN: INVITADO (LOGIN/REGISTRO) -->
+      <!-- INVITADO -->
       <div v-else class="auth-links">
         <RouterLink to="/login" class="btn-ghost">Entrar</RouterLink>
-        <RouterLink to="/registro" class="btn-primary">Registro</RouterLink>
+        <RouterLink to="/registro" class="btn-primary-auth">Registro</RouterLink>
       </div>
     </div>
   </header>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useCartStore } from '@/stores/cart'
@@ -82,6 +89,15 @@ const iniciales = computed(() => {
     .slice(0, 2)
 })
 
+// Navegación directa a la vista del carrito
+async function irAlCarrito() {
+  // Sincronizamos antes de ir para que los datos sean reales
+  if (authStore.usuario) {
+    await cartStore.fetchCarrito()
+  }
+  router.push('/carrito')
+}
+
 function cerrarSesion() {
   authStore.logout()
   menuOpen.value = false
@@ -90,15 +106,18 @@ function cerrarSesion() {
 
 function toggleMode() {
   isDark.value = !isDark.value
-  if (!isDark.value) {
-    document.body.classList.add('light-mode')
-  } else {
-    document.body.classList.remove('light-mode')
-  }
+  document.body.classList.toggle('light-mode', !isDark.value)
 }
+
+onMounted(() => {
+  if (authStore.usuario) {
+    cartStore.fetchCarrito()
+  }
+})
 </script>
 
 <style scoped>
+/* ESTRUCTURA BASE */
 .header {
   position: fixed;
   top: 0; left: 0; right: 0;
@@ -110,11 +129,9 @@ function toggleMode() {
   align-items: center;
   justify-content: space-between;
   padding: 0 2rem;
-  z-index: 100;
+  z-index: 1000;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
 }
-
-.header-left { display: flex; align-items: center; }
 
 .logo {
   font-family: 'Cinzel', serif;
@@ -124,151 +141,121 @@ function toggleMode() {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  text-shadow: 0 0 15px rgba(129, 33, 208, 0.8);
 }
-
 .logo span { color: #8121d0; font-weight: bold; }
 
-.header-nav { display: flex; gap: 1rem; align-items: center; }
-
+.header-nav { display: flex; gap: 0.5rem; align-items: center; }
 .header-nav a {
   font-family: 'Cinzel', serif;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: #a394ac;
   text-decoration: none;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  padding: 0.5rem 1rem;
-  transition: all 0.3s ease;
+  padding: 0.5rem 0.8rem;
+  transition: 0.3s;
 }
-
 .header-nav a:hover, .header-nav a.router-link-active {
   color: #8121d0;
-  text-shadow: 0 0 10px rgba(129, 33, 208, 0.5);
-}
-
-.nav-admin-link {
-  border: 1px dashed #8121d0;
-  margin-left: 10px;
-  border-radius: 4px;
 }
 
 .header-right { display: flex; align-items: center; gap: 1.2rem; }
 
 .mode-toggle {
   background: transparent;
-  border: 1px solid #333;
-  color: #e0d5e8;
-  padding: 0.4rem;
+  border: none;
   cursor: pointer;
-  border-radius: 50%;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
 }
 
+/* BOTÓN CARRITO Y BADGE */
 .cart-btn {
   position: relative;
   background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   color: #e0d5e8;
+  display: flex;
+  align-items: center;
 }
 
 .cart-badge {
   position: absolute;
-  top: -5px; right: -5px;
+  top: -8px; right: -8px;
   background: #8121d0;
   color: white;
-  font-size: 0.7rem;
+  font-size: 0.6rem;
+  font-weight: bold;
   width: 18px; height: 18px;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  border: 1px solid #e0d5e8;
+  border: 1px solid #000;
 }
 
-.user-menu {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  cursor: pointer;
-  color: #e0d5e8;
-}
-
+/* MENU USUARIO */
+.user-menu { position: relative; display: flex; align-items: center; gap: 0.8rem; cursor: pointer; }
 .avatar {
-  width: 35px; height: 35px;
+  width: 32px; height: 32px;
   background: #1a121d;
   border: 1px solid #8121d0;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-family: 'Cinzel', serif;
-  font-weight: bold;
-  box-shadow: 0 0 10px rgba(129, 33, 208, 0.4);
+  font-family: 'Cinzel', serif; font-size: 0.8rem; color: #e0d5e8;
 }
 
 .dropdown {
   position: absolute;
-  top: 120%; right: 0;
-  background: #1a121d;
+  top: 50px; right: 0;
+  background: #0a0a0a;
   border: 1px solid #8121d0;
-  border-radius: 4px;
-  padding: 0.5rem;
+  padding: 0.5rem 0;
   min-width: 180px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.8);
 }
 
 .dropdown a, .dropdown button {
   display: block; width: 100%;
-  padding: 0.6rem 1rem;
+  padding: 0.6rem 1.2rem;
   color: #a394ac;
   background: transparent;
   border: none;
   text-align: left;
-  font-family: 'Quicksand', sans-serif;
-  text-transform: uppercase;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   cursor: pointer;
+  text-transform: uppercase;
+  text-decoration: none;
 }
 
 .dropdown a:hover, .dropdown button:hover {
-  background: rgba(129, 33, 208, 0.2);
-  color: #e0d5e8;
-}
-
-.divider {
-  border: 0;
-  border-top: 1px solid rgba(129, 33, 208, 0.3);
-  margin: 0.5rem 0;
-}
-
-.admin-action {
-  color: #8121d0 !important;
-  font-weight: bold;
-}
-
-.logout-btn {
-  color: #ff4444 !important;
-}
-
-.auth-links { display: flex; gap: 1rem; }
-
-.btn-primary {
   background: #8121d0;
   color: white;
-  padding: 0.5rem 1.2rem;
-  border-radius: 4px;
-  text-decoration: none;
-  font-family: 'Cinzel', serif;
-  font-size: 0.8rem;
-  transition: 0.3s;
 }
 
-.btn-ghost {
-  color: #e0d5e8;
-  text-decoration: none;
-  font-family: 'Cinzel', serif;
-  font-size: 0.8rem;
+.divider { border: 0; border-top: 1px solid #1a1a1a; margin: 0.5rem 0; }
+
+/* AUTH LINKS */
+.auth-links { display: flex; gap: 1rem; }
+.btn-ghost { color: #a394ac; text-decoration: none; font-size: 0.8rem; text-transform: uppercase; padding: 0.5rem; }
+.btn-primary-auth { 
+  background: #8121d0; 
+  color: white; 
+  text-decoration: none; 
+  padding: 0.5rem 1rem; 
+  font-size: 0.8rem; 
+  text-transform: uppercase;
+  border-radius: 2px;
 }
+
+/* ANIMACIONES */
+.pop-enter-active { animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+@keyframes pop-in {
+  0% { transform: scale(0); }
+  100% { transform: scale(1); }
+}
+
+.fade-drop-enter-active, .fade-drop-leave-active { transition: all 0.2s ease; }
+.fade-drop-enter-from, .fade-drop-leave-to { opacity: 0; transform: translateY(-10px); }
 
 @media (max-width: 768px) {
   .header-nav, .user-name { display: none; }

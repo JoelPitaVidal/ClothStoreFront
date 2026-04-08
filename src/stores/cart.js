@@ -4,7 +4,8 @@ import {
   getCarrito, 
   añadirAlCarrito as apiAñadir, 
   eliminarDelCarrito as apiEliminar, 
-  vaciarCarrito as apiVaciar 
+  vaciarCarrito as apiVaciar,
+  actualizarCantidadCarrito // Ya existe en la API, no dará error
 } from '@/api/index'
 
 export const useCartStore = defineStore('cart', () => {
@@ -12,17 +13,30 @@ export const useCartStore = defineStore('cart', () => {
   const loading = ref(false)
 
   // Getters
-  const totalItems = computed(() => items.value.reduce((acc, item) => acc + item.cantidad, 0))
-  const totalPrice = computed(() => items.value.reduce((acc, item) => acc + (item.precio * item.cantidad), 0))
+  const totalItems = computed(() => {
+    if (!Array.isArray(items.value)) return 0
+    return items.value.reduce((acc, item) => acc + (item.cantidad || 0), 0)
+  })
+
+  const totalPrecio = computed(() => {
+    if (!Array.isArray(items.value)) return 0
+    return items.value.reduce((acc, item) => {
+      // Soporta tanto 'producto' como 'productos' (común en joins de Supabase/FastAPI)
+      const precio = item.producto?.precio || item.productos?.precio || 0
+      return acc + (precio * item.cantidad)
+    }, 0)
+  })
 
   // Acciones
   async function fetchCarrito() {
     loading.value = true
     try {
       const response = await getCarrito()
-      items.value = response.data
+      // Nos aseguramos de asignar un array vacío si la data viene corrupta
+      items.value = Array.isArray(response.data) ? response.data : []
     } catch (error) {
       console.error('Error al obtener el carrito:', error)
+      items.value = []
     } finally {
       loading.value = false
     }
@@ -31,9 +45,19 @@ export const useCartStore = defineStore('cart', () => {
   async function agregarProducto(productoId, cantidad = 1) {
     try {
       await apiAñadir({ producto_id: productoId, cantidad })
-      await fetchCarrito() // Recargamos el carrito tras añadir
+      await fetchCarrito()
     } catch (error) {
       console.error('Error al añadir al carrito:', error)
+    }
+  }
+
+  async function actualizarCantidad(productoId, nuevaCantidad) {
+    try {
+      if (nuevaCantidad < 1) return
+      await actualizarCantidadCarrito(productoId, nuevaCantidad)
+      await fetchCarrito()
+    } catch (error) {
+      console.error('Error al actualizar cantidad:', error)
     }
   }
 
@@ -59,9 +83,10 @@ export const useCartStore = defineStore('cart', () => {
     items,
     loading,
     totalItems,
-    totalPrice,
+    totalPrecio,
     fetchCarrito,
     agregarProducto,
+    actualizarCantidad,
     eliminarProducto,
     limpiarCarrito
   }

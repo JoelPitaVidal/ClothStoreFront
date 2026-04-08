@@ -73,13 +73,20 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="prod in productos" :key="prod.id">
-              <td>{{ prod.nombre }}</td>
-              <td>{{ prod.precio }}€</td>
-              <td>{{ prod.stock }}</td>
+            <!-- Iteramos sobre la lista blindada -->
+            <tr v-for="prod in (productos || [])" :key="prod.id">
+              <td>{{ prod.nombre || 'Sin nombre' }}</td>
+              <td>{{ prod.precio ? prod.precio.toFixed(2) : '0.00' }}€</td>
+              <td>{{ prod.stock ?? 0 }}</td>
               <td class="actions-cell">
                 <button class="btn-icon edit" @click="prepararEdicion(prod)" title="Editar">✏️</button>
                 <button class="btn-icon delete" @click="handleEliminar(prod.id)" title="Eliminar">🗑️</button>
+              </td>
+            </tr>
+            <!-- Mensaje si no hay productos reales -->
+            <tr v-if="!productos || productos.length === 0">
+              <td colspan="4" style="text-align: center; padding: 2rem; color: #666;">
+                No hay reliquias en el inventario.
               </td>
             </tr>
           </tbody>
@@ -97,7 +104,7 @@ const loading = ref(false)
 const mensaje = ref('')
 const isError = ref(false)
 const categorias = ref([])
-const productos = ref([])
+const productos = ref([]) // Inicializado como array
 const editandoId = ref(null)
 
 const form = ref({
@@ -117,13 +124,20 @@ async function fetchInicial() {
   try {
     const [resCat, resProd] = await Promise.all([getCategorias(), getProductos()])
     categorias.value = resCat.data
-    productos.value = resProd.data
+    
+    // CORRECCIÓN: Manejar respuesta paginada { resultados: [], total: X }
+    if (resProd.data && resProd.data.resultados) {
+      productos.value = resProd.data.resultados
+    } else {
+      productos.value = resProd.data || []
+    }
   } catch (error) {
     console.error("Error al cargar datos:", error)
+    isError.value = true
+    mensaje.value = "Las sombras impiden ver el inventario."
   }
 }
 
-// Función unificada para Crear o Editar
 async function handleSubmit() {
   loading.value = true
   mensaje.value = ''
@@ -138,16 +152,14 @@ async function handleSubmit() {
     }
 
     if (editandoId.value) {
-      // EDITAR (Asegúrate de tener el PUT en tu backend)
       await api.put(`/productos/${editandoId.value}`, payload)
       mensaje.value = "Reliquia actualizada correctamente."
     } else {
-      // CREAR
       await crearProducto(payload)
       mensaje.value = "Reliquia añadida al catálogo."
     }
 
-    await fetchInicial() // Recargar lista
+    await fetchInicial() 
     cancelarEdicion()
   } catch (error) {
     isError.value = true
@@ -169,6 +181,7 @@ function cancelarEdicion() {
 }
 
 async function handleEliminar(id) {
+  if (!id) return
   if (!confirm("¿Deseas desterrar este producto para siempre?")) return
 
   try {
@@ -178,7 +191,7 @@ async function handleEliminar(id) {
     isError.value = false
   } catch (error) {
     isError.value = true
-    mensaje.value = "No se pudo eliminar el producto."
+    mensaje.value = "No se pudo eliminar. ¿Quizás está en un pedido activo?"
   }
 }
 </script>
@@ -248,7 +261,6 @@ input:focus, .gothic-select:focus { border-color: #8121d0; outline: none; }
   font-family: 'Cinzel', serif;
 }
 
-/* TABLA */
 .table-container { overflow-x: auto; margin-top: 1rem; }
 .gothic-table { width: 100%; border-collapse: collapse; color: #e0d5e8; }
 .gothic-table th { border-bottom: 2px solid #8121d0; padding: 0.8rem; text-align: left; font-family: 'Cinzel'; font-size: 0.8rem; }

@@ -9,7 +9,6 @@ const api = axios.create({
 
 // --- INTERCEPTORES ---
 
-// 1. Inyección automática del Token Bearer
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token')
   if (token) {
@@ -20,11 +19,6 @@ api.interceptors.request.use(config => {
   return Promise.reject(error)
 })
 
-// 2. Manejador global de errores 401
-// ✅ CORREGIDO: no redirigir si estamos en /login o /registro.
-// Antes redirigía siempre ante cualquier 401, lo que causaba un bucle
-// infinito al intentar loguearse con credenciales incorrectas y destruía
-// el estado de Pinia impidiendo que el catch del componente actuara.
 api.interceptors.response.use(
   response => response,
   error => {
@@ -35,7 +29,6 @@ api.interceptors.response.use(
         localStorage.removeItem('token')
         window.location.href = '/login'
       }
-      // En rutas públicas dejamos que el catch del componente maneje el error
     }
     return Promise.reject(error)
   }
@@ -44,8 +37,6 @@ api.interceptors.response.use(
 // --- FUNCIONES DE LA API ---
 
 // Autenticación
-// ✅ Recibe objeto plano { username, password } y construye URLSearchParams
-// para cumplir con el estándar OAuth2 que espera FastAPI.
 export const login = (credentials) => {
   const params = new URLSearchParams()
   params.append('username', credentials.username)
@@ -72,7 +63,12 @@ export const getCategorias = () => api.get('/categorias')
 export const getCarrito         = ()       => api.get('/carrito')
 export const añadirAlCarrito    = (data)   => api.post('/carrito/items', data)
 export const eliminarDelCarrito = (itemId) => api.delete(`/carrito/items/${itemId}`)
-export const vaciarCarrito      = ()       => api.delete('/carrito')
+export const vaciarCarrito       = ()       => api.delete('/carrito')
+
+// ✅ FUNCIÓN AÑADIDA: Ahora el Store podrá encontrarla
+export const actualizarCantidadCarrito = (productoId, cantidad) => {
+  return api.put(`/carrito/items/${productoId}`, { cantidad })
+}
 
 // Pedidos
 export const crearPedido   = () => api.post('/pedidos')

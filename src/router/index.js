@@ -1,13 +1,14 @@
 // src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '@/stores/auth' // Importamos el store para verificar permisos
+import { useAuthStore } from '@/stores/auth'
 
 import HomeView       from '@/views/HomeView.vue'
 import LoginView      from '@/views/LoginView.vue'
 import ProductosView  from '@/views/ProductosView.vue'
 import CategoriasView from '@/views/CategoriasView.vue'
 import RegistroView   from '@/views/RegistroView.vue'
-import AdminView      from '@/views/AdminView.vue' // Importa la nueva vista
+import AdminView      from '@/views/AdminView.vue' 
+import CarritoView    from '@/views/CarritoView.vue' // Importación del alijo
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -17,6 +18,7 @@ const router = createRouter({
     { path: '/registro',   name: 'registro',   component: RegistroView },
     { path: '/productos',  name: 'productos',  component: ProductosView },
     { path: '/categorias', name: 'categorias', component: CategoriasView },
+    { path: '/carrito',    name: 'carrito',    component: CarritoView }, // Ruta del carrito
     { 
       path: '/admin',      
       name: 'admin',      
@@ -46,7 +48,7 @@ router.beforeEach(async (to, from, next) => {
       next('/') // Expulsado a la Home
     }
   } else {
-    next() // Si no requiere admin, cualquier puede pasar
+    next() // Si no requiere admin, cualquiera puede pasar
   }
 })
 
