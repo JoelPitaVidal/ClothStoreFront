@@ -65,9 +65,9 @@ export const añadirAlCarrito    = (data)   => api.post('/carrito/items', data)
 export const eliminarDelCarrito = (itemId) => api.delete(`/carrito/items/${itemId}`)
 export const vaciarCarrito       = ()       => api.delete('/carrito')
 
-// ✅ FUNCIÓN AÑADIDA: Ahora el Store podrá encontrarla
+// Cambia .put por .patch
 export const actualizarCantidadCarrito = (productoId, cantidad) => {
-  return api.put(`/carrito/items/${productoId}`, { cantidad })
+  return api.patch(`/carrito/items/${productoId}`, { cantidad })
 }
 
 // Pedidos

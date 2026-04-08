@@ -15,7 +15,10 @@ defineEmits(['close'])
   left: 0;
   width: var(--sidebar-width);
   height: calc(100vh - var(--header-height));
-  background: var(--bg-secondary);
-  border-right: 1px solid var(--border);
+  /* USAMOS LAS VARIABLES GLOBALES */
+  background: var(--bg-panel); 
+  border-right: 1px solid var(--border-light);
+  transition: background 0.4s ease, border-color 0.4s ease;
+  z-index: 100;
 }
 </style>

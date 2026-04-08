@@ -28,19 +28,29 @@ export const useCartStore = defineStore('cart', () => {
   })
 
   // Acciones
-  async function fetchCarrito() {
-    loading.value = true
-    try {
-      const response = await getCarrito()
-      // Nos aseguramos de asignar un array vacío si la data viene corrupta
-      items.value = Array.isArray(response.data) ? response.data : []
-    } catch (error) {
-      console.error('Error al obtener el carrito:', error)
+// src/stores/cart.js
+
+async function fetchCarrito() {
+  loading.value = true
+  try {
+    const response = await getCarrito()
+    console.log("DATOS RECIBIDOS DEL SERVIDOR:", response.data)
+    
+    // ✅ CORRECCIÓN: Si response.data es un objeto con la propiedad 'items'
+    if (response.data && Array.isArray(response.data.items)) {
+      items.value = response.data.items
+    } else if (Array.isArray(response.data)) {
+      items.value = response.data
+    } else {
       items.value = []
-    } finally {
-      loading.value = false
     }
+  } catch (error) {
+    console.error('Error al obtener el carrito:', error)
+    items.value = []
+  } finally {
+    loading.value = false
   }
+}
 
   async function agregarProducto(productoId, cantidad = 1) {
     try {

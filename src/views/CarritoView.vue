@@ -2,22 +2,22 @@
   <div class="cart-page">
     <div class="container">
       <header class="cart-title-section">
-        <h1 class="title-gothic">Carrito ✦</h1>
+        <h1 class="title-gothic">Mi Carrito</h1>
         <p v-if="cartStore.items?.length > 0" class="subtitle">
-          Has reclamado {{ cartStore.totalItems }} objetos del vacío.
+          Tienes {{ cartStore.totalItems }} producto(s) en tu selección
         </p>
       </header>
 
       <!-- ESTADO DE CARGA -->
       <div v-if="cartStore.loading && (!cartStore.items || cartStore.items.length === 0)" class="loading-state">
         <div class="spinner"></div>
-        <p>Invocando reliquias...</p>
+        <p>Cargando productos...</p>
       </div>
 
       <!-- ESTADO VACÍO -->
       <div v-else-if="!cartStore.items || cartStore.items.length === 0" class="empty-state">
-        <p>Carrito vacío, explora para descubrir nuestros productos.</p>
-        <RouterLink to="/productos" class="btn-primary-gothic">Volver a la Tienda</RouterLink>
+        <p>Tu carrito está actualmente vacío.</p>
+        <RouterLink to="/productos" class="btn-primary-gothic">Ver Catálogo</RouterLink>
       </div>
 
       <!-- GRID DEL CARRITO -->
@@ -37,13 +37,20 @@
               <div class="item-info">
                 <h3 class="product-name">{{ item.producto?.nombre || item.productos?.nombre }}</h3>
                 <p class="product-category">
-                  Esencia: {{ item.producto?.categoria?.nombre || item.productos?.categoria?.nombre || 'Reliquia' }}
+                  Categoría: {{ item.producto?.categoria?.nombre || item.productos?.categoria?.nombre || 'General' }}
                 </p>
                 
                 <div class="quantity-wrapper">
-                  <button @click="actualizar(item, item.cantidad - 1)" class="qty-btn" :disabled="item.cantidad <= 1">−</button>
+                  <button 
+                    @click="actualizar(item, item.cantidad - 1)" 
+                    class="qty-btn" 
+                    :disabled="item.cantidad <= 1"
+                  >−</button>
                   <span class="qty-number">{{ item.cantidad }}</span>
-                  <button @click="actualizar(item, item.cantidad + 1)" class="qty-btn">+</button>
+                  <button 
+                    @click="actualizar(item, item.cantidad + 1)" 
+                    class="qty-btn"
+                  >+</button>
                 </div>
               </div>
 
@@ -52,20 +59,20 @@
                   {{ ((item.producto?.precio || item.productos?.precio || 0) * item.cantidad).toFixed(2) }}€
                 </p>
                 <button class="btn-delete" @click="eliminar(item.id)">
-                  🗑 Eliminar
+                  <span>Quitar</span>
                 </button>
               </div>
             </template>
           </div>
 
           <div class="cart-actions-bottom">
-            <button class="btn-clear" @click="vaciar">Vaciar Alijo</button>
+            <button class="btn-clear" @click="vaciar">Vaciar carrito</button>
           </div>
         </main>
 
         <aside class="cart-summary">
           <div class="summary-card">
-            <h2 class="summary-title">Resumen del Ritual</h2>
+            <h2 class="summary-title">Resumen del pedido</h2>
             <div class="summary-details">
               <div class="summary-row">
                 <span>Subtotal</span>
@@ -73,7 +80,7 @@
               </div>
               <div class="summary-row">
                 <span>Envío</span>
-                <span class="free">Gratis (Cortesía nocturna)</span>
+                <span class="free">Calculado al finalizar</span>
               </div>
               <hr class="summary-divider">
               <div class="summary-row total">
@@ -82,9 +89,9 @@
               </div>
             </div>
             <button class="btn-checkout" @click="procederAlPago">
-              Finalizar Ritual
+              Tramitar Pedido
             </button>
-            <p class="secure-text">🔒 Transacción protegida por las sombras</p>
+            <p class="secure-text">Pagos seguros y encriptados</p>
           </div>
         </aside>
       </div>
@@ -103,61 +110,288 @@ onMounted(() => {
 })
 
 async function actualizar(item, nuevaCantidad) {
-  const pId = item.producto_id || item.producto?.id || item.productos?.id
-  if (pId) {
-    await cartStore.actualizarCantidad(pId, nuevaCantidad)
+  // Usamos el ID de la relación del carrito (item.id) para la petición PATCH/PUT
+  if (item.id && nuevaCantidad > 0) {
+    await cartStore.actualizarCantidad(item.id, nuevaCantidad)
   }
 }
 
 async function eliminar(id) {
-  if (confirm("¿Seguro que deseas desterrar este objeto?")) {
+  if (confirm("¿Deseas eliminar este producto del carrito?")) {
     await cartStore.eliminarProducto(id)
   }
 }
 
 async function vaciar() {
-  if (confirm("¿Vaciar todo el alijo? El vacío es absoluto.")) {
+  if (confirm("¿Estás seguro de que deseas vaciar todo el carrito?")) {
     await cartStore.limpiarCarrito()
   }
 }
 
 function procederAlPago() {
-  alert("Próximamente: Integración con la pasarela de pagos sombría.")
+  alert("El sistema de pagos se encuentra en mantenimiento. Por favor, inténtelo más tarde.")
 }
 </script>
 
 <style scoped>
-/* Tu CSS se mantiene igual, está perfecto para la estética gótica */
-.cart-page { min-height: 100vh; padding-top: 100px; padding-bottom: 3rem; background-color: #050505; color: #e0d5e8; }
-.container { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
-.cart-title-section { text-align: left; margin-bottom: 2.5rem; border-bottom: 1px solid #1a1a1a; padding-bottom: 1rem; }
-.title-gothic { font-family: 'Cinzel', serif; font-size: 2rem; color: #8121d0; text-transform: uppercase; letter-spacing: 2px; }
-.subtitle { color: #a394ac; font-size: 0.9rem; margin-top: 0.5rem; }
-.cart-grid { display: grid; grid-template-columns: 1fr 350px; gap: 2.5rem; align-items: start; }
-.cart-item { display: flex; gap: 1.5rem; background: rgba(15, 15, 15, 0.6); border: 1px solid #1a1a1a; padding: 1.2rem; margin-bottom: 1rem; border-radius: 2px; align-items: center; }
-.item-img-container { width: 90px; height: 110px; flex-shrink: 0; overflow: hidden; border: 1px solid #333; }
-.item-img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(0.3); transition: 0.3s; }
+.cart-page { 
+  min-height: 100vh; 
+  padding-top: 100px; 
+  padding-bottom: 3rem; 
+  background-color: #050505; 
+  color: #e0d5e8; 
+}
+
+.container { 
+  max-width: 1100px; 
+  margin: 0 auto; 
+  padding: 0 1.5rem; 
+}
+
+.cart-title-section { 
+  text-align: left; 
+  margin-bottom: 2.5rem; 
+  border-bottom: 1px solid #1a1a1a; 
+  padding-bottom: 1rem; 
+}
+
+.title-gothic { 
+  font-family: 'Cinzel', serif; 
+  font-size: 2rem; 
+  color: #8121d0; 
+  text-transform: uppercase; 
+  letter-spacing: 2px; 
+}
+
+.subtitle { 
+  color: #a394ac; 
+  font-size: 0.9rem; 
+  margin-top: 0.5rem; 
+}
+
+.cart-grid { 
+  display: grid; 
+  grid-template-columns: 1fr 350px; 
+  gap: 2.5rem; 
+  align-items: start; 
+}
+
+.cart-item { 
+  display: flex; 
+  gap: 1.5rem; 
+  background: rgba(15, 15, 15, 0.6); 
+  border: 1px solid #1a1a1a; 
+  padding: 1.2rem; 
+  margin-bottom: 1rem; 
+  border-radius: 2px; 
+  align-items: center; 
+}
+
+.item-img-container { 
+  width: 90px; 
+  height: 110px; 
+  flex-shrink: 0; 
+  overflow: hidden; 
+  border: 1px solid #333; 
+}
+
+.item-img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; 
+  filter: brightness(0.8); 
+  transition: 0.3s; 
+}
+
 .item-info { flex: 1; }
-.product-name { font-family: 'Cinzel', serif; font-size: 1rem; color: #e0d5e8; margin-bottom: 0.2rem; }
-.product-category { font-size: 0.7rem; color: #8121d0; text-transform: uppercase; margin-bottom: 1rem; }
-.quantity-wrapper { display: flex; align-items: center; gap: 0.8rem; background: #000; width: fit-content; border: 1px solid #222; }
-.qty-btn { background: transparent; border: none; color: #8121d0; width: 30px; height: 30px; cursor: pointer; font-size: 1.2rem; }
-.qty-btn:hover:not(:disabled) { background: #8121d0; color: white; }
-.qty-number { font-family: 'monospace'; min-width: 20px; text-align: center; }
-.item-price-actions { text-align: right; display: flex; flex-direction: column; gap: 1rem; }
-.subtotal { font-size: 1.1rem; font-weight: bold; color: #e0d5e8; }
-.btn-delete { background: transparent; border: none; color: #555; font-size: 0.7rem; cursor: pointer; text-transform: uppercase; }
+
+.product-name { 
+  font-family: 'Cinzel', serif; 
+  font-size: 1rem; 
+  color: #e0d5e8; 
+  margin-bottom: 0.2rem; 
+}
+
+.product-category { 
+  font-size: 0.7rem; 
+  color: #8121d0; 
+  text-transform: uppercase; 
+  margin-bottom: 1rem; 
+}
+
+.quantity-wrapper { 
+  display: flex; 
+  align-items: center; 
+  gap: 0.8rem; 
+  background: #000; 
+  width: fit-content; 
+  border: 1px solid #222; 
+}
+
+.qty-btn { 
+  background: transparent; 
+  border: none; 
+  color: #8121d0; 
+  width: 30px; 
+  height: 30px; 
+  cursor: pointer; 
+  font-size: 1.2rem; 
+}
+
+.qty-btn:hover:not(:disabled) { 
+  background: #8121d0; 
+  color: white; 
+}
+
+.qty-btn:disabled {
+  color: #444;
+  cursor: not-allowed;
+}
+
+.qty-number { 
+  font-family: 'monospace'; 
+  min-width: 20px; 
+  text-align: center; 
+}
+
+.item-price-actions { 
+  text-align: right; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 1rem; 
+}
+
+.subtotal { 
+  font-size: 1.1rem; 
+  font-weight: bold; 
+  color: #e0d5e8; 
+}
+
+.btn-delete { 
+  background: transparent; 
+  border: none; 
+  color: #777; 
+  font-size: 0.7rem; 
+  cursor: pointer; 
+  text-transform: uppercase; 
+  text-decoration: underline; 
+}
+
 .btn-delete:hover { color: #ff4444; }
-.btn-clear { background: transparent; border: 1px solid #222; color: #555; padding: 0.5rem 1rem; font-size: 0.7rem; cursor: pointer; }
-.summary-card { background: #0a0a0a; border: 1px solid #1a1a1a; padding: 1.5rem; position: sticky; top: 100px; }
-.summary-title { font-family: 'Cinzel', serif; font-size: 1.1rem; color: #8121d0; margin-bottom: 1.5rem; text-transform: uppercase; }
-.summary-row { display: flex; justify-content: space-between; margin-bottom: 0.8rem; font-size: 0.85rem; color: #a394ac; }
-.summary-divider { border: 0; border-top: 1px solid #1a1a1a; margin: 1rem 0; }
-.summary-row.total { font-size: 1.3rem; color: #fff; font-family: 'Cinzel', serif; }
-.btn-checkout { width: 100%; background: #8121d0; color: #fff; border: none; padding: 1rem; font-family: 'Cinzel', serif; text-transform: uppercase; cursor: pointer; margin-top: 1.5rem; }
+
+.btn-clear { 
+  background: transparent; 
+  border: 1px solid #222; 
+  color: #777; 
+  padding: 0.5rem 1rem; 
+  font-size: 0.7rem; 
+  cursor: pointer; 
+  transition: 0.3s; 
+}
+
+.btn-clear:hover { 
+  border-color: #555; 
+  color: #ccc; 
+}
+
+.summary-card { 
+  background: #0a0a0a; 
+  border: 1px solid #1a1a1a; 
+  padding: 1.5rem; 
+  position: sticky; 
+  top: 120px; 
+}
+
+.summary-title { 
+  font-family: 'Cinzel', serif; 
+  font-size: 1.1rem; 
+  color: #8121d0; 
+  margin-bottom: 1.5rem; 
+  text-transform: uppercase; 
+}
+
+.summary-row { 
+  display: flex; 
+  justify-content: space-between; 
+  margin-bottom: 0.8rem; 
+  font-size: 0.85rem; 
+  color: #a394ac; 
+}
+
+.summary-divider { 
+  border: 0; 
+  border-top: 1px solid #1a1a1a; 
+  margin: 1rem 0; 
+}
+
+.summary-row.total { 
+  font-size: 1.3rem; 
+  color: #fff; 
+  font-family: 'Cinzel', serif; 
+}
+
+.btn-checkout { 
+  width: 100%; 
+  background: #8121d0; 
+  color: #fff; 
+  border: none; 
+  padding: 1rem; 
+  font-family: 'Cinzel', serif; 
+  text-transform: uppercase; 
+  cursor: pointer; 
+  margin-top: 1.5rem; 
+  transition: 0.3s; 
+}
+
 .btn-checkout:hover { background: #9d3df0; }
-.empty-state { text-align: center; padding: 8rem 0; }
-.btn-primary-gothic { display: inline-block; background: transparent; border: 1px solid #8121d0; color: #8121d0; padding: 0.8rem 2rem; text-decoration: none; font-family: 'Cinzel', serif; margin-top: 1.5rem; }
+
+.secure-text { 
+  font-size: 0.7rem; 
+  color: #555; 
+  text-align: center; 
+  margin-top: 1rem; 
+}
+
+.empty-state { 
+  text-align: center; 
+  padding: 8rem 0; 
+}
+
+.btn-primary-gothic { 
+  display: inline-block; 
+  background: transparent; 
+  border: 1px solid #8121d0; 
+  color: #8121d0; 
+  padding: 0.8rem 2rem; 
+  text-decoration: none; 
+  font-family: 'Cinzel', serif; 
+  margin-top: 1.5rem; 
+  transition: 0.3s; 
+}
+
+.btn-primary-gothic:hover { 
+  background: #8121d0; 
+  color: white; 
+}
+
+.loading-state { 
+  text-align: center; 
+  padding: 5rem; 
+}
+
+.spinner { 
+  width: 40px; 
+  height: 40px; 
+  border: 3px solid rgba(129, 33, 208, 0.2); 
+  border-top-color: #8121d0; 
+  border-radius: 50%; 
+  animation: spin 1s linear infinite; 
+  margin: 0 auto 1rem; 
+}
+
+@keyframes spin { 
+  to { transform: rotate(360deg); } 
+}
 
 @media (max-width: 850px) {
   .cart-grid { grid-template-columns: 1fr; }

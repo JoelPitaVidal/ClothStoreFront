@@ -2,65 +2,60 @@
   <header class="header">
     <div class="header-left">
       <RouterLink to="/" class="logo">
-        ✦ <span>Midnight Attire</span>
+        MIDNIGHT <span>ATTIRE</span>
       </RouterLink>
     </div>
 
     <nav class="header-nav">
       <RouterLink to="/">Inicio</RouterLink>
+      <RouterLink to="/categorias">Colecciones</RouterLink>
       <RouterLink to="/productos">Tienda</RouterLink>
-      <RouterLink to="/categorias">Categorías</RouterLink>
       <RouterLink 
         v-if="authStore.usuario?.es_admin" 
         to="/admin" 
         class="nav-admin-link"
       >
-        Panel Maestro
+        Administración
       </RouterLink>
     </nav>
 
     <div class="header-right">
-      <!-- MODO OSCURO/CLARO -->
-      <button class="mode-toggle" @click="toggleMode" :title="isDark ? 'Luz' : 'Sombras'">
-        {{ isDark ? '🌙' : '☀️' }}
+      <!-- INTERRUPTOR DE MODO -->
+      <button class="mode-toggle-pill" @click="toggleMode" :title="isDark ? 'Modo Claro' : 'Modo Oscuro'">
+        <div :class="['pill-indicator', { 'is-light': !isDark }]">
+          <span class="mode-text">{{ isDark ? 'DARK' : 'LIGHT' }}</span>
+        </div>
       </button>
 
-      <!-- BOTÓN DEL CARRITO (Redirige a /carrito) -->
-      <button class="cart-btn" @click="irAlCarrito" title="Ver mi alijo">
-        <span class="cart-icon">🛒</span>
+      <!-- CARRITO -->
+      <button class="cart-btn" @click="irAlCarrito">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>
+        </svg>
         <Transition name="pop">
-          <span v-if="cartStore.totalItems > 0" class="cart-badge">
-            {{ cartStore.totalItems }}
-          </span>
+          <span v-if="cartStore.totalItems > 0" class="cart-badge">{{ cartStore.totalItems }}</span>
         </Transition>
       </button>
 
-      <!-- USUARIO AUTENTICADO -->
+      <!-- MENÚ DE USUARIO -->
       <div v-if="authStore.usuario" class="user-menu" @click="menuOpen = !menuOpen">
         <div class="avatar">{{ iniciales }}</div>
         <span class="user-name">{{ authStore.usuario.nombre }}</span>
         
         <Transition name="fade-drop">
           <div v-if="menuOpen" class="dropdown">
-            <RouterLink to="/perfil" @click="menuOpen = false">Mi perfil</RouterLink>
-            <RouterLink to="/pedidos" @click="menuOpen = false">Mis pedidos</RouterLink>
-            
-            <template v-if="authStore.usuario.es_admin">
-              <hr class="divider" />
-              <RouterLink to="/admin" @click="menuOpen = false" class="admin-action">
-                Panel Admin †
-              </RouterLink>
-            </template>
-            
-            <hr class="divider" />
-            <button @click="cerrarSesion" class="logout-btn">Cerrar sesión</button>
+            <div class="dropdown-header">Mi cuenta</div>
+            <RouterLink to="/perfil" @click="menuOpen = false">Perfil</RouterLink>
+            <RouterLink to="/pedidos" @click="menuOpen = false">Pedidos</RouterLink>
+            <div class="dropdown-divider"></div>
+            <button @click="cerrarSesion" class="logout-btn">Cerrar Sesión</button>
           </div>
         </Transition>
       </div>
 
-      <!-- INVITADO -->
+      <!-- BOTONES DE ACCESO Y REGISTRO -->
       <div v-else class="auth-links">
-        <RouterLink to="/login" class="btn-ghost">Entrar</RouterLink>
+        <RouterLink to="/login" class="btn-ghost-nav">Acceder</RouterLink>
         <RouterLink to="/registro" class="btn-primary-auth">Registro</RouterLink>
       </div>
     </div>
@@ -73,28 +68,25 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useCartStore } from '@/stores/cart'
 
-const router    = useRouter()
+const router = useRouter()
 const authStore = useAuthStore()
 const cartStore = useCartStore()
-const menuOpen  = ref(false)
-const isDark    = ref(true)
+
+const menuOpen = ref(false)
+const isDark = ref(true)
 
 const iniciales = computed(() => {
-  if (!authStore.usuario || !authStore.usuario.nombre) return '?'
-  return authStore.usuario.nombre
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+  if (!authStore.usuario?.nombre) return '?'
+  return authStore.usuario.nombre.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 })
 
-// Navegación directa a la vista del carrito
+const toggleMode = () => {
+  isDark.value = !isDark.value
+  document.body.classList.toggle('light-mode', !isDark.value)
+}
+
 async function irAlCarrito() {
-  // Sincronizamos antes de ir para que los datos sean reales
-  if (authStore.usuario) {
-    await cartStore.fetchCarrito()
-  }
+  if (authStore.usuario) await cartStore.fetchCarrito()
   router.push('/carrito')
 }
 
@@ -104,160 +96,188 @@ function cerrarSesion() {
   router.push('/login')
 }
 
-function toggleMode() {
-  isDark.value = !isDark.value
-  document.body.classList.toggle('light-mode', !isDark.value)
-}
-
 onMounted(() => {
-  if (authStore.usuario) {
-    cartStore.fetchCarrito()
-  }
+  if (authStore.usuario) cartStore.fetchCarrito()
 })
 </script>
 
 <style scoped>
-/* ESTRUCTURA BASE */
 .header {
   position: fixed;
   top: 0; left: 0; right: 0;
-  height: 70px;
-  background: rgba(10, 10, 10, 0.95);
-  backdrop-filter: blur(10px);
-  border-bottom: 2px solid #8121d0;
+  height: 75px;
+  background: var(--header-bg, rgba(5, 5, 5, 0.9));
+  backdrop-filter: blur(15px);
+  border-bottom: 1px solid var(--header-border, rgba(129, 33, 208, 0.2));
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 2rem;
+  padding: 0 4rem;
   z-index: 1000;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+  transition: all 0.4s ease;
 }
 
+/* Variables dinámicas según el body */
+:global(body.light-mode) {
+  --header-bg: rgba(255, 255, 255, 0.9);
+  --header-border: rgba(0, 0, 0, 0.08);
+  --header-text: #111;
+  --header-text-muted: #555;
+  --header-toggle-bg: #eee;
+}
+
+/* LOGO */
 .logo {
   font-family: 'Cinzel', serif;
-  font-size: 1.6rem;
-  color: #e0d5e8;
+  font-size: 1.4rem;
+  color: var(--header-text, #fff);
   text-decoration: none;
+  letter-spacing: 4px;
+  transition: color 0.3s ease;
+}
+.logo span { color: #8121d0; }
+
+/* NAVEGACIÓN CENTRAL */
+.header-nav { display: flex; gap: 2rem; }
+.header-nav a {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  color: var(--header-text-muted, #a394ac);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 500;
+  transition: 0.3s;
+}
+.header-nav a:hover, .header-nav a.router-link-active { 
+  color: #8121d0; 
+}
+
+/* DERECHA (TOGGLE, CART, AUTH) */
+.header-right { 
+  display: flex; 
+  align-items: center; 
+  gap: 1.5rem; 
+}
+
+/* MODO PILL */
+.mode-toggle-pill {
+  background: var(--header-toggle-bg, #111);
+  border: 1px solid var(--header-border, #333);
+  padding: 3px; border-radius: 20px;
+  cursor: pointer; width: 65px; height: 28px;
+  display: flex; align-items: center;
+  transition: all 0.3s ease;
+}
+.pill-indicator {
+  background: #222; width: 100%; height: 100%;
+  border-radius: 15px; display: flex; align-items: center; justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.pill-indicator.is-light { background: #8121d0; }
+.mode-text { font-family: 'Inter', sans-serif; font-size: 0.55rem; font-weight: 800; color: #fff; letter-spacing: 1px; }
+
+/* CARRITO */
+.cart-btn { background: transparent; border: none; cursor: pointer; color: var(--header-text, #fff); position: relative; display: flex; align-items: center; transition: color 0.3s; }
+.cart-btn:hover { color: #8121d0; }
+.cart-badge {
+  position: absolute; top: -8px; right: -8px;
+  background: #8121d0; color: #fff; font-size: 0.6rem;
+  width: 16px; height: 16px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: bold;
+}
+
+/* AUTH LINKS (ACCEDER Y REGISTRO) */
+.auth-links {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
-.logo span { color: #8121d0; font-weight: bold; }
 
-.header-nav { display: flex; gap: 0.5rem; align-items: center; }
-.header-nav a {
-  font-family: 'Cinzel', serif;
-  font-size: 0.8rem;
-  color: #a394ac;
+.btn-ghost-nav {
+  color: var(--header-text, #fff);
   text-decoration: none;
+  font-size: 0.7rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  padding: 0.5rem 0.8rem;
-  transition: 0.3s;
+  letter-spacing: 1.5px;
+  padding: 0.6rem 1rem;
+  transition: all 0.3s ease;
 }
-.header-nav a:hover, .header-nav a.router-link-active {
-  color: #8121d0;
-}
+.btn-ghost-nav:hover { color: #8121d0; }
 
-.header-right { display: flex; align-items: center; gap: 1.2rem; }
-
-.mode-toggle {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 1.2rem;
-}
-
-/* BOTÓN CARRITO Y BADGE */
-.cart-btn {
-  position: relative;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 1.3rem;
-  color: #e0d5e8;
-  display: flex;
-  align-items: center;
-}
-
-.cart-badge {
-  position: absolute;
-  top: -8px; right: -8px;
+.btn-primary-auth {
   background: #8121d0;
-  color: white;
-  font-size: 0.6rem;
-  font-weight: bold;
-  width: 18px; height: 18px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  border: 1px solid #000;
+  color: #fff !important;
+  text-decoration: none;
+  padding: 0.6rem 1.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(129, 33, 208, 0.2);
+}
+.btn-primary-auth:hover {
+  background: #9d3fef;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 15px rgba(129, 33, 208, 0.4);
 }
 
-/* MENU USUARIO */
+/* MENÚ DE USUARIO & DROPDOWN */
 .user-menu { position: relative; display: flex; align-items: center; gap: 0.8rem; cursor: pointer; }
 .avatar {
-  width: 32px; height: 32px;
-  background: #1a121d;
-  border: 1px solid #8121d0;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Cinzel', serif; font-size: 0.8rem; color: #e0d5e8;
+  width: 32px; height: 32px; border: 1px solid #8121d0;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; color: var(--header-text, #fff); font-weight: bold;
 }
+.user-name { font-size: 0.8rem; color: var(--header-text-muted, #a394ac); font-weight: 500; }
 
 .dropdown {
-  position: absolute;
-  top: 50px; right: 0;
-  background: #0a0a0a;
-  border: 1px solid #8121d0;
+  position: absolute; top: 55px; right: 0;
+  background: var(--bg-card, #0a0a0a);
+  border: 1px solid var(--header-border, #222);
+  min-width: 200px; 
+  box-shadow: 0 15px 35px rgba(0,0,0,0.4);
   padding: 0.5rem 0;
-  min-width: 180px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+  border-radius: 4px;
+}
+:global(body.light-mode) .dropdown { 
+  background: #fff;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
 }
 
+.dropdown-header { padding: 0.8rem 1.2rem; font-size: 0.6rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
 .dropdown a, .dropdown button {
-  display: block; width: 100%;
-  padding: 0.6rem 1.2rem;
-  color: #a394ac;
-  background: transparent;
-  border: none;
-  text-align: left;
-  font-size: 0.75rem;
-  cursor: pointer;
-  text-transform: uppercase;
-  text-decoration: none;
+  display: block; width: 100%; padding: 0.8rem 1.2rem;
+  color: var(--header-text, #eee); text-decoration: none;
+  font-size: 0.8rem; border: none; background: transparent; text-align: left;
+  cursor: pointer; transition: 0.2s;
 }
-
-.dropdown a:hover, .dropdown button:hover {
-  background: #8121d0;
-  color: white;
-}
-
-.divider { border: 0; border-top: 1px solid #1a1a1a; margin: 0.5rem 0; }
-
-/* AUTH LINKS */
-.auth-links { display: flex; gap: 1rem; }
-.btn-ghost { color: #a394ac; text-decoration: none; font-size: 0.8rem; text-transform: uppercase; padding: 0.5rem; }
-.btn-primary-auth { 
+.dropdown a:hover, .dropdown button:hover { 
   background: #8121d0; 
-  color: white; 
-  text-decoration: none; 
-  padding: 0.5rem 1rem; 
-  font-size: 0.8rem; 
-  text-transform: uppercase;
-  border-radius: 2px;
+  color: #fff; 
 }
+.dropdown-divider { height: 1px; background: var(--header-border, #222); margin: 0.5rem 0; }
 
 /* ANIMACIONES */
 .pop-enter-active { animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-@keyframes pop-in {
-  0% { transform: scale(0); }
-  100% { transform: scale(1); }
-}
+@keyframes pop-in { 0% { transform: scale(0); } 100% { transform: scale(1); } }
 
 .fade-drop-enter-active, .fade-drop-leave-active { transition: all 0.2s ease; }
 .fade-drop-enter-from, .fade-drop-leave-to { opacity: 0; transform: translateY(-10px); }
 
-@media (max-width: 768px) {
+/* RESPONSIVE */
+@media (max-width: 1024px) {
+  .header { padding: 0 2rem; }
   .header-nav, .user-name { display: none; }
+}
+
+@media (max-width: 480px) {
+  .logo { font-size: 1.1rem; letter-spacing: 2px; }
+  .auth-links { gap: 0.2rem; }
+  .btn-primary-auth { padding: 0.5rem 0.8rem; }
 }
 </style>
