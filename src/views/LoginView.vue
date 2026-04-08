@@ -33,11 +33,12 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { login } from '@/api'
+import { useAuthStore } from '@/stores/auth' // ✅ AÑADIDO: importar el store
 
-const router = useRouter()
-const loading = ref(false)
-const error = ref(null)
+const router    = useRouter()
+const authStore = useAuthStore()             // ✅ AÑADIDO: instanciar el store
+const loading   = ref(false)
+const error     = ref(null)
 
 const form = ref({
   username: '',
@@ -46,12 +47,16 @@ const form = ref({
 
 const handleLogin = async () => {
   loading.value = true
-  error.value = null
+  error.value   = null
   try {
-    const response = await login(form.value)
-    // Guardamos el token que nos da Python
-    localStorage.setItem('token', response.data.access_token)
-    // Redirigir a la tienda
+    // ✅ CORREGIDO: delegamos al store en lugar de llamar a la API directamente.
+    // loginUsuario() ya se encarga de:
+    //   1. Llamar a la API de login
+    //   2. Guardar el token en localStorage
+    //   3. Llamar a fetchUsuario() para poblar authStore.usuario
+    await authStore.loginUsuario(form.value.username, form.value.password)
+
+    // Solo llegamos aquí si el login fue exitoso
     router.push('/productos')
   } catch (err) {
     error.value = "Las credenciales no son válidas."
@@ -110,6 +115,7 @@ const handleLogin = async () => {
   color: white;
   border-radius: 4px;
   transition: border 0.3s;
+  box-sizing: border-box;
 }
 
 .input-group input:focus {
@@ -133,6 +139,12 @@ const handleLogin = async () => {
 .btn-auth:hover {
   box-shadow: 0 0 20px var(--accent-glow);
   transform: scale(1.02);
+}
+
+.btn-auth:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .auth-footer {

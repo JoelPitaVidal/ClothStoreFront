@@ -1,14 +1,9 @@
 import axios from 'axios'
 
-/**
- * CONFIGURACIÓN BASE
- * El backend (Python) normalmente corre en el 8000.
- * El puerto 5173 es solo para el servidor de desarrollo de tu Frontend.
- */
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:8000', 
-  headers: { 
-    'Content-Type': 'application/json' 
+  baseURL: 'http://127.0.0.1:8000',
+  headers: {
+    'Content-Type': 'application/json'
   }
 })
 
@@ -25,18 +20,22 @@ api.interceptors.request.use(config => {
   return Promise.reject(error)
 })
 
-// 2. Manejador global de respuestas y errores
+// 2. Manejador global de errores 401
+// ✅ CORREGIDO: no redirigir si estamos en /login o /registro.
+// Antes redirigía siempre ante cualquier 401, lo que causaba un bucle
+// infinito al intentar loguearse con credenciales incorrectas y destruía
+// el estado de Pinia impidiendo que el catch del componente actuara.
 api.interceptors.response.use(
   response => response,
   error => {
-    // Si el servidor responde con 401, el token ya no es válido
     if (error.response?.status === 401) {
-      console.warn("Sesión expirada o inválida. Redirigiendo...")
-      localStorage.removeItem('token')
-      // Solo redirigir si no estamos ya en la página de login para evitar bucles
-      if (window.location.pathname !== '/login') {
+      const rutasPublicas = ['/login', '/registro']
+      if (!rutasPublicas.includes(window.location.pathname)) {
+        console.warn("Sesión expirada o inválida. Redirigiendo...")
+        localStorage.removeItem('token')
         window.location.href = '/login'
       }
+      // En rutas públicas dejamos que el catch del componente maneje el error
     }
     return Promise.reject(error)
   }
@@ -44,34 +43,36 @@ api.interceptors.response.use(
 
 // --- FUNCIONES DE LA API ---
 
-// Autenticación (Auth)
-// Usamos URLSearchParams para cumplir con el estándar OAuth2 que usa FastAPI por defecto
+// Autenticación
+// ✅ Recibe objeto plano { username, password } y construye URLSearchParams
+// para cumplir con el estándar OAuth2 que espera FastAPI.
 export const login = (credentials) => {
   const params = new URLSearchParams()
-  params.append('username', credentials.username) // FastAPI suele esperar 'username', no 'email'
+  params.append('username', credentials.username)
   params.append('password', credentials.password)
-  
+
   return api.post('/auth/login', params, {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
   })
 }
 
 export const registro = (data) => api.post('/auth/registro', data)
-export const getMe = () => api.get('/auth/me')
+export const getMe    = () => api.get('/auth/me')
 
-// Productos (Colección Midnight Attire)
-export const getProductos = (params) => api.get('/productos', { params })
-export const getProducto  = (id) => api.get(`/productos/${id}`)
-export const crearProducto = (data) => api.post('/productos', data)
+// Productos
+export const getProductos     = (params) => api.get('/productos', { params })
+export const getProducto      = (id)     => api.get(`/productos/${id}`)
+export const crearProducto    = (data)   => api.post('/productos', data)
+export const eliminarProducto = (id)     => api.delete(`/productos/${id}`)
 
 // Categorías
 export const getCategorias = () => api.get('/categorias')
 
 // Carrito
-export const getCarrito       = () => api.get('/carrito')
-export const añadirAlCarrito  = (data) => api.post('/carrito/items', data)
+export const getCarrito         = ()       => api.get('/carrito')
+export const añadirAlCarrito    = (data)   => api.post('/carrito/items', data)
 export const eliminarDelCarrito = (itemId) => api.delete(`/carrito/items/${itemId}`)
-export const vaciarCarrito    = () => api.delete('/carrito')
+export const vaciarCarrito      = ()       => api.delete('/carrito')
 
 // Pedidos
 export const crearPedido   = () => api.post('/pedidos')

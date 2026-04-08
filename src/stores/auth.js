@@ -1,4 +1,3 @@
-// src/stores/auth.js
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { login as loginApi, getMe } from '../api/index.js'
@@ -7,28 +6,45 @@ export const useAuthStore = defineStore('auth', () => {
   const usuario = ref(null)
   const token   = ref(localStorage.getItem('token') || null)
 
-  const estaAutenticado = computed(() => !!token.value)
-  const esAdmin         = computed(() => usuario.value?.es_admin ?? false)
+  // Getters reactivos
+  const estaAutenticado = computed(() => !!usuario.value)
+  const esAdmin         = computed(() => !!usuario.value?.es_admin)
 
-  async function inicializar() {
-    if (token.value) {
-      try {
-        const res = await getMe()
-        usuario.value = res.data
-      } catch {
-        logout()
-      }
+  /**
+   * Obtiene los datos del usuario actual usando el token guardado
+   */
+  async function fetchUsuario() {
+    if (!token.value) return
+    try {
+      const res = await getMe()
+      usuario.value = res.data
+    } catch (error) {
+      console.error("Error recuperando sesión:", error)
+      logout()
     }
   }
 
-  async function loginUsuario(email, password) {
-    const params = new URLSearchParams()
-    params.append('username', email)
-    params.append('password', password)
-    const res = await loginApi(params)
-    token.value = res.data.access_token
-    localStorage.setItem('token', token.value)
-    await inicializar()
+  /**
+   * Login: Guarda token y recupera al usuario inmediatamente.
+   * ✅ CORREGIDO: pasamos objeto plano { username, password }.
+   * api/index.js se encarga de convertirlo a URLSearchParams para OAuth2.
+   * Antes el store construía URLSearchParams Y api/index.js lo volvía a
+   * construir, resultando en credenciales undefined → 401 inevitable.
+   */
+  async function loginUsuario(username, password) {
+    try {
+      const res = await loginApi({ username, password })
+
+      token.value = res.data.access_token
+      localStorage.setItem('token', token.value)
+
+      await fetchUsuario()
+
+      return res.data
+    } catch (error) {
+      logout()
+      throw error
+    }
   }
 
   function logout() {
@@ -37,5 +53,13 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('token')
   }
 
-  return { usuario, token, estaAutenticado, esAdmin, inicializar, loginUsuario, logout }
+  return {
+    usuario,
+    token,
+    estaAutenticado,
+    esAdmin,
+    fetchUsuario,
+    loginUsuario,
+    logout
+  }
 })

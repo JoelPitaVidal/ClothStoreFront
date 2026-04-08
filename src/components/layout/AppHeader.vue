@@ -1,12 +1,6 @@
 ﻿<template>
   <header class="header">
     <div class="header-left">
-      <button class="menu-btn" @click="$emit('toggle-sidebar')">
-        <span></span><span></span><span></span>
-      </button>
-      <button class="mode-toggle" @click="toggleMode">
-        {{ isDark ? '🌙' : '☀️' }}
-      </button>
       <RouterLink to="/" class="logo">
         ✦ <span>Midnight Attire</span>
       </RouterLink>
@@ -16,15 +10,27 @@
       <RouterLink to="/">Inicio</RouterLink>
       <RouterLink to="/productos">Tienda</RouterLink>
       <RouterLink to="/categorias">Categorías</RouterLink>
+      <RouterLink 
+        v-if="authStore.usuario?.es_admin" 
+        to="/admin" 
+        class="nav-admin-link"
+      >
+        Panel Maestro
+      </RouterLink>
     </nav>
 
     <div class="header-right">
+      <!-- Botón modo oscuro/claro junto al carrito -->
+      <button class="mode-toggle" @click="toggleMode">
+        {{ isDark ? '🌙' : '☀️' }}
+      </button>
+
       <button class="cart-btn" @click="cartStore.fetchCarrito()">
         <span class="cart-icon">🛒</span>
         <span v-if="cartStore.totalItems > 0" class="cart-badge">{{ cartStore.totalItems }}</span>
       </button>
 
-      <!-- Usuario Autenticado -->
+      <!-- SECCIÓN: USUARIO AUTENTICADO -->
       <div v-if="authStore.usuario" class="user-menu" @click="menuOpen = !menuOpen">
         <div class="avatar">{{ iniciales }}</div>
         <span class="user-name">{{ authStore.usuario.nombre }}</span>
@@ -32,12 +38,20 @@
         <div v-if="menuOpen" class="dropdown">
           <RouterLink to="/perfil" @click="menuOpen = false">Mi perfil</RouterLink>
           <RouterLink to="/pedidos" @click="menuOpen = false">Mis pedidos</RouterLink>
-          <hr />
-          <button @click="cerrarSesion">Cerrar sesión</button>
+          
+          <template v-if="authStore.usuario.es_admin">
+            <hr class="divider" />
+            <RouterLink to="/admin" @click="menuOpen = false" class="admin-action">
+              Añadir Producto †
+            </RouterLink>
+          </template>
+          
+          <hr class="divider" />
+          <button @click="cerrarSesion" class="logout-btn">Cerrar sesión</button>
         </div>
       </div>
 
-      <!-- Invitado -->
+      <!-- SECCIÓN: INVITADO (LOGIN/REGISTRO) -->
       <div v-else class="auth-links">
         <RouterLink to="/login" class="btn-ghost">Entrar</RouterLink>
         <RouterLink to="/registro" class="btn-primary">Registro</RouterLink>
@@ -47,7 +61,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useCartStore } from '@/stores/cart'
@@ -56,6 +70,7 @@ const router    = useRouter()
 const authStore = useAuthStore()
 const cartStore = useCartStore()
 const menuOpen  = ref(false)
+const isDark    = ref(true)
 
 const iniciales = computed(() => {
   if (!authStore.usuario || !authStore.usuario.nombre) return '?'
@@ -73,8 +88,6 @@ function cerrarSesion() {
   router.push('/login')
 }
 
-const isDark = ref(true)
-
 function toggleMode() {
   isDark.value = !isDark.value
   if (!isDark.value) {
@@ -83,18 +96,16 @@ function toggleMode() {
     document.body.classList.remove('light-mode')
   }
 }
-
 </script>
 
 <style scoped>
-/* Tipografías y Colores aplicados al estilo Gótico/Oscuro */
 .header {
   position: fixed;
   top: 0; left: 0; right: 0;
   height: 70px;
   background: rgba(10, 10, 10, 0.95);
   backdrop-filter: blur(10px);
-  border-bottom: 2px solid #8121d0; /* Morado eléctrico */
+  border-bottom: 2px solid #8121d0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -103,7 +114,7 @@ function toggleMode() {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
 }
 
-.header-left { display: flex; align-items: center; gap: 1.5rem; }
+.header-left { display: flex; align-items: center; }
 
 .logo {
   font-family: 'Cinzel', serif;
@@ -116,12 +127,9 @@ function toggleMode() {
   text-shadow: 0 0 15px rgba(129, 33, 208, 0.8);
 }
 
-.logo span {
-  color: #8121d0;
-  font-weight: bold;
-}
+.logo span { color: #8121d0; font-weight: bold; }
 
-.header-nav { display: flex; gap: 1rem; }
+.header-nav { display: flex; gap: 1rem; align-items: center; }
 
 .header-nav a {
   font-family: 'Cinzel', serif;
@@ -139,7 +147,23 @@ function toggleMode() {
   text-shadow: 0 0 10px rgba(129, 33, 208, 0.5);
 }
 
+.nav-admin-link {
+  border: 1px dashed #8121d0;
+  margin-left: 10px;
+  border-radius: 4px;
+}
+
 .header-right { display: flex; align-items: center; gap: 1.2rem; }
+
+.mode-toggle {
+  background: transparent;
+  border: 1px solid #333;
+  color: #e0d5e8;
+  padding: 0.4rem;
+  cursor: pointer;
+  border-radius: 50%;
+  font-size: 1.1rem;
+}
 
 .cart-btn {
   position: relative;
@@ -211,6 +235,21 @@ function toggleMode() {
   color: #e0d5e8;
 }
 
+.divider {
+  border: 0;
+  border-top: 1px solid rgba(129, 33, 208, 0.3);
+  margin: 0.5rem 0;
+}
+
+.admin-action {
+  color: #8121d0 !important;
+  font-weight: bold;
+}
+
+.logout-btn {
+  color: #ff4444 !important;
+}
+
 .auth-links { display: flex; gap: 1rem; }
 
 .btn-primary {
@@ -234,20 +273,4 @@ function toggleMode() {
 @media (max-width: 768px) {
   .header-nav, .user-name { display: none; }
 }
-
-.mode-toggle {
-  background: transparent;
-  border: 1px solid var(--border-light);
-  color: var(--text-primary);
-  padding: 0.4rem;
-  cursor: pointer;
-  border-radius: 50%;
-  font-size: 1.1rem;
-  transition: var(--transition);
-}
-.mode-toggle:hover {
-  border-color: var(--accent-bright);
-  background: var(--bg-hover);
-}
-
 </style>
