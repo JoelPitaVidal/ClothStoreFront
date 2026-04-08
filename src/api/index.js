@@ -1,8 +1,12 @@
 import axios from 'axios'
 
-// Configuración base de Axios
+/**
+ * CONFIGURACIÓN BASE
+ * El backend (Python) normalmente corre en el 8000.
+ * El puerto 5173 es solo para el servidor de desarrollo de tu Frontend.
+ */
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:8000', // Asegúrate de que tu backend esté en este puerto
+  baseURL: 'http://127.0.0.1:8000', 
   headers: { 
     'Content-Type': 'application/json' 
   }
@@ -10,38 +14,52 @@ const api = axios.create({
 
 // --- INTERCEPTORES ---
 
-// 1. Añade el token automáticamente a cada petición si existe
+// 1. Inyección automática del Token Bearer
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
   return config
+}, error => {
+  return Promise.reject(error)
 })
 
-// 2. Maneja errores globales (como el 401 Unauthorized)
+// 2. Manejador global de respuestas y errores
 api.interceptors.response.use(
   response => response,
   error => {
+    // Si el servidor responde con 401, el token ya no es válido
     if (error.response?.status === 401) {
+      console.warn("Sesión expirada o inválida. Redirigiendo...")
       localStorage.removeItem('token')
-      // Redirigir al login si el token expira o es inválido
-      window.location.href = '/login'
+      // Solo redirigir si no estamos ya en la página de login para evitar bucles
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }
 )
 
-// --- FUNCIONES DE LA API (EXPORTS NOMBRADOS) ---
+// --- FUNCIONES DE LA API ---
 
 // Autenticación (Auth)
-export const login = (data) => api.post('/auth/login', data, {
-  headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-})
+// Usamos URLSearchParams para cumplir con el estándar OAuth2 que usa FastAPI por defecto
+export const login = (credentials) => {
+  const params = new URLSearchParams()
+  params.append('username', credentials.username) // FastAPI suele esperar 'username', no 'email'
+  params.append('password', credentials.password)
+  
+  return api.post('/auth/login', params, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  })
+}
+
 export const registro = (data) => api.post('/auth/registro', data)
 export const getMe = () => api.get('/auth/me')
 
-// Productos
+// Productos (Colección Midnight Attire)
 export const getProductos = (params) => api.get('/productos', { params })
 export const getProducto  = (id) => api.get(`/productos/${id}`)
 export const crearProducto = (data) => api.post('/productos', data)
@@ -59,5 +77,4 @@ export const vaciarCarrito    = () => api.delete('/carrito')
 export const crearPedido   = () => api.post('/pedidos')
 export const getMisPedidos = () => api.get('/pedidos')
 
-// Exportación por defecto de la instancia de axios
 export default api

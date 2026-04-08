@@ -1,29 +1,30 @@
 <template>
   <div class="auth-container mt-header">
     <div class="auth-card">
-      <h2 class="title-gothic">Iniciar Sesión</h2>
-      <p class="auth-subtitle"></p>
-
-      <form @submit.prevent="handleLogin" class="auth-form">
+      <h2 class="title-gothic">Crear Cuenta</h2>
+      
+      <form @submit.prevent="handleRegistro" class="auth-form">
         <div class="input-group">
-          <label>Nombre de usuario</label>
-          <input v-model="form.username" type="text" placeholder="Tu nombre" required>
+          <label>Usuario</label>
+          <input v-model="form.username" type="text" required>
+        </div>
+
+        <div class="input-group">
+          <label>Email</label>
+          <input v-model="form.email" type="email" required>
         </div>
 
         <div class="input-group">
           <label>Contraseña</label>
-          <input v-model="form.password" type="password" placeholder="••••••••" required>
+          <input v-model="form.password" type="password" required>
         </div>
 
         <button type="submit" class="btn-auth" :disabled="loading">
-          {{ loading ? 'Verificando...' : 'Acceder' }}
+          Registrarme
         </button>
 
-        <p v-if="error" class="error-msg">{{ error }}</p>
-
         <div class="auth-footer">
-          <span>¿No tienes cuenta?</span>
-          <router-link to="/registro" class="link-accent">Regístrate aquí</router-link>
+          <router-link to="/login" class="link-accent">Ya tengo cuenta</router-link>
         </div>
       </form>
     </div>
@@ -33,29 +34,20 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { login } from '@/api'
+import { registro } from '@/api'
 
 const router = useRouter()
 const loading = ref(false)
-const error = ref(null)
+const form = ref({ username: '', email: '', password: '' })
 
-const form = ref({
-  username: '',
-  password: ''
-})
-
-const handleLogin = async () => {
-  loading.value = true
-  error.value = null
+const handleRegistro = async () => {
   try {
-    const response = await login(form.value)
-    // Guardamos el token que nos da Python
-    localStorage.setItem('token', response.data.access_token)
-    // Redirigir a la tienda
-    router.push('/productos')
+    loading.value = true
+    await registro(form.value)
+    alert("Cuenta creada con éxito. Ahora inicia sesión.")
+    router.push('/login')
   } catch (err) {
-    error.value = "Las credenciales no son válidas."
-    console.error(err)
+    alert("Error al crear la cuenta. Puede que el usuario ya exista.")
   } finally {
     loading.value = false
   }
@@ -63,7 +55,6 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-
 .auth-container {
   display: flex;
   justify-content: center;
