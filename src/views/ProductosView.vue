@@ -1,5 +1,6 @@
 <template>
   <div class="shop-container mt-header">
+    <!-- BARRA LATERAL DE FILTROS -->
     <aside class="filters">
       <h2 class="title-gothic">Filtros</h2>
       
@@ -7,8 +8,9 @@
         <h4>Categorías</h4>
         <ul>
           <li v-for="cat in categorias" :key="cat.id">
-            <label>
+            <label class="checkbox-container">
               <input type="checkbox" :value="cat.id" v-model="selectedCategories"> 
+              <span class="checkmark"></span>
               {{ cat.nombre }}
             </label>
           </li>
@@ -16,47 +18,53 @@
       </div>
     </aside>
 
+    <!-- REJILLA DE PRODUCTOS -->
     <main class="products-grid">
       <div v-if="loading" class="loading-state">Invocando sombras...</div>
-
       <div v-else-if="error" class="error-state">{{ error }}</div>
 
       <div v-else v-for="producto in productos" :key="producto.id" class="product-card">
         
+        <!-- IMAGEN COMPACTA -->
         <div class="product-image">
           <img 
-            :src="producto.imagen_url || 'https://via.placeholder.com/500x700/1a1a1a/e0e0e0?text=Midnight+Attire'" 
+            :src="producto.imagen_url || 'https://via.placeholder.com/500x500/1a1a1a/e0e0e0?text=Reliquia'" 
             :alt="producto.nombre"
           >
-          
           <div v-if="producto.es_nuevo || producto.id % 3 === 0" class="product-badge">
-            {{ producto.es_nuevo ? 'Nuevo' : 'Exclusivo' }}
+            {{ producto.id % 3 === 0 ? 'Exclusivo' : 'Nuevo' }}
           </div>
         </div>
 
+        <!-- INFORMACIÓN REDUCIDA -->
         <div class="product-info">
-          <h3 class="product-title">{{ producto.nombre }}</h3>
-          <p class="product-price">{{ producto.precio.toFixed(2) }}€</p>
+          <h3 class="product-title" :title="producto.nombre">{{ producto.nombre }}</h3>
           
-          <button 
-            @click="handleAddToCart(producto)" 
-            class="btn-add-cart"
-            :disabled="addingToCart === producto.id"
-          >
-            <span v-if="addingToCart === producto.id">Invocando...</span>
-            <span v-else>Añadir al Carrito 🛒</span>
-          </button>
+          <p class="product-description">
+            {{ producto.descripcion || 'Sin descripción en los archivos antiguos.' }}
+          </p>
+          
+          <div class="product-footer">
+            <span class="product-price">{{ producto.precio.toFixed(2) }}€</span>
+            <button 
+              @click="handleAddToCart(producto)" 
+              class="btn-add-cart"
+              :disabled="addingToCart === producto.id"
+            >
+              <span v-if="addingToCart === producto.id">...</span>
+              <span v-else>+ 🛒</span>
+            </button>
+          </div>
         </div>
       </div>
-      </main>
+    </main>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import { getProductos, getCategorias, añadirAlCarrito } from '@/api' // Tu Axios reparado
+import { getProductos, getCategorias, añadirAlCarrito } from '@/api'
 
-// Estados Reactivos
 const productos = ref([])
 const categorias = ref([])
 const selectedCategories = ref([])
@@ -64,31 +72,23 @@ const loading = ref(true)
 const error = ref(null)
 const addingToCart = ref(null)
 
-// --- LÓGICA DE DATOS ---
-
-// Cargar Productos (con filtros opcionales)
 const fetchProductos = async () => {
   try {
     loading.value = true
     error.value = null
-    
-    // Construir parámetros de filtro si hay categorías seleccionadas
     const params = selectedCategories.value.length > 0 
       ? { categoria_id: selectedCategories.value.join(',') } 
       : {}
-      
     const response = await getProductos(params)
-    // Asegúrate de que tu API devuelve directamente la lista de productos en response.data
     productos.value = response.data
   } catch (err) {
-    error.value = "Las sombras no responden. Revisa la conexión con el servidor (puerto 8000)."
-    console.error("Error detallado:", err)
+    error.value = "Las sombras no responden. Revisa la conexión."
+    console.error(err)
   } finally {
     loading.value = false
   }
 }
 
-// Cargar Categorías para los filtros
 const fetchCategorias = async () => {
   try {
     const response = await getCategorias()
@@ -98,35 +98,23 @@ const fetchCategorias = async () => {
   }
 }
 
-// Acción de añadir al carrito
 const handleAddToCart = async (producto) => {
-  addingToCart.value = producto.id // Activar estado de carga en el botón
+  addingToCart.value = producto.id
   try {
     await añadirAlCarrito({ producto_id: producto.id, cantidad: 1 })
-    // Aquí podrías usar una notificación más elegante que un 'alert'
-    alert(`${producto.nombre} ha sido reclamado por tu carrito.`)
+    alert(`${producto.nombre} reclamado.`)
   } catch (err) {
-    console.error("Error al añadir al carrito:", err)
-    if (err.response?.status === 401) {
-      alert("Debes iniciar sesión para reclamar productos.")
-    } else {
-      alert("Hubo un problema al conectar con el carrito.")
-    }
+    if (err.response?.status === 401) alert("Inicia sesión primero.")
+    else alert("Error al conectar con el carrito.")
   } finally {
-    addingToCart.value = null // Desactivar estado de carga
+    addingToCart.value = null
   }
 }
 
-// --- OBSERVADORES ---
-
-// Recargar productos automáticamente cuando cambien los filtros
 watch(selectedCategories, () => {
   fetchProductos()
 })
 
-// --- CICLO DE VIDA ---
-
-// Carga inicial al montar el componente
 onMounted(() => {
   fetchProductos()
   fetchCategorias()
@@ -134,145 +122,145 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* *** TUS ESTILOS ORIGINALES INTACTOS *** */
 .shop-container {
   display: grid;
-  grid-template-columns: 250px 1fr;
+  grid-template-columns: 200px 1fr;
   gap: 2rem;
   padding: 2rem 5%;
   min-height: 100vh;
 }
 
-/* Filtros */
+/* FILTROS */
 .filters {
-  border-right: 1px solid var(--border-light);
+  border-right: 1px solid #333;
   padding-right: 1.5rem;
 }
+.title-gothic { font-family: 'Cinzel', serif; color: #8121d0; font-size: 1.2rem; }
+.filter-group h4 { color: #a394ac; font-size: 0.8rem; text-transform: uppercase; margin: 1.5rem 0 0.5rem; }
+.filter-group ul { list-style: none; padding: 0; }
+.filter-group li { margin-bottom: 0.5rem; color: #e0d5e8; font-size: 0.9rem; }
 
-.filter-group h4 {
-  font-family: var(--font-gothic);
-  color: var(--accent-bright);
-  margin: 1.5rem 0 0.5rem;
-  font-size: 0.9rem;
-}
-
-/* Rejilla de Productos */
+/* REJILLA COMPACTA */
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 2.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.5rem;
+  align-items: start;
 }
 
-/* La Tarjeta "Intensa" */
+/* TARJETA REDUCIDA */
 .product-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
+  background: #0a0a0a;
+  border: 1px solid #222;
+  border-radius: 4px;
   overflow: hidden;
-  transition: var(--transition);
-  position: relative;
+  transition: 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .product-card:hover {
-  transform: translateY(-10px);
-  border-color: var(--accent);
-  box-shadow: var(--shadow-intense);
+  border-color: #8121d0;
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(129, 33, 208, 0.2);
 }
 
+/* IMAGEN CUADRADA (Reduce altura) */
 .product-image {
   position: relative;
-  aspect-ratio: 3/4;
+  aspect-ratio: 1 / 1; 
   overflow: hidden;
+  background: #111;
 }
 
 .product-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.5s ease;
-  filter: grayscale(0.3) brightness(0.8); /* Look Gótico */
+  filter: grayscale(0.3) brightness(0.7);
+  transition: 0.5s;
 }
 
-.product-card:hover img {
-  transform: scale(1.1);
+.product-card:hover .product-image img {
   filter: grayscale(0) brightness(1);
+  transform: scale(1.05);
 }
 
 .product-badge {
   position: absolute;
-  top: 1rem;
-  left: 1rem;
-  background: var(--accent);
+  top: 0.5rem;
+  left: 0.5rem;
+  background: #8121d0;
   color: white;
-  padding: 0.2rem 0.8rem;
-  font-family: var(--font-gothic);
-  font-size: 0.7rem;
-  border-radius: 2px;
+  padding: 2px 8px;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  font-weight: bold;
 }
 
+/* INFO Y DESCRIPCIÓN */
 .product-info {
-  padding: 1.5rem;
-  text-align: center;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .product-title {
-  font-family: var(--font-gothic);
-  font-size: 1.1rem;
-  margin-bottom: 0.5rem;
+  font-family: 'Cinzel', serif;
+  font-size: 0.95rem;
+  margin: 0;
+  color: #e0d5e8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.product-description {
+  font-size: 0.75rem;
+  color: #888;
+  margin: 0;
+  line-height: 1.3;
+  /* Limitar a 2 líneas */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* FOOTER ALINEADO */
+.product-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #1a1a1a;
 }
 
 .product-price {
-  color: var(--text-secondary);
+  color: #8121d0;
   font-weight: bold;
-  margin-bottom: 1.2rem;
+  font-size: 1rem;
 }
 
 .btn-add-cart {
-  width: 100%;
-  padding: 0.8rem;
   background: transparent;
-  border: 1px solid var(--accent);
-  color: var(--text-primary);
-  font-family: var(--font-gothic);
-  text-transform: uppercase;
+  border: 1px solid #8121d0;
+  color: white;
+  padding: 0.3rem 0.6rem;
   cursor: pointer;
-  transition: var(--transition);
+  border-radius: 2px;
+  transition: 0.2s;
 }
 
 .btn-add-cart:hover:not(:disabled) {
-  background: var(--accent);
-  color: white;
-  box-shadow: 0 0 15px var(--accent-glow);
+  background: #8121d0;
 }
 
-/* --- ESTILOS EXTRA PARA ESTADOS DE CARGA/ERROR GÓTICOS --- */
-.loading-state, .error-state {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 10rem 2rem;
-  font-family: var(--font-gothic);
-  color: var(--accent);
-  font-size: 1.8rem;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  animation: pulse 2s infinite;
-}
-
-.error-state {
-  color: #ff4444; /* Un rojo oscuro para errores */
-}
-
-.btn-add-cart:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  border-color: #444;
-}
-
-@keyframes pulse {
-  0% { opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { opacity: 0.6; }
-}
+/* ESTADOS */
+.loading-state { grid-column: 1/-1; text-align: center; padding: 5rem; color: #8121d0; font-family: 'Cinzel'; }
+.error-state { grid-column: 1/-1; text-align: center; color: #ff4444; }
 
 @media (max-width: 768px) {
   .shop-container { grid-template-columns: 1fr; }
