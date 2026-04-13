@@ -43,9 +43,10 @@
 <style scoped>
 .footer {
   padding: 4rem 2rem 2rem;
-  background-color: var(--bg-secondary);
-  border-top: 1px solid var(--border);
-  color: var(--text-soft);
+  background-color: var(--bg-panel);      /* ✅ era --bg-secondary */
+  border-top: 1px solid var(--border-light); /* ✅ era --border */
+  color: var(--text-secondary);           /* ✅ era --text-soft */
+  transition: background-color 0.4s ease, color 0.4s ease;
 }
 
 .footer-container {
@@ -57,7 +58,7 @@
 }
 
 .footer-logo {
-  color: var(--gothic-purple);
+  color: var(--accent);                   /* ✅ era --gothic-purple */
   font-size: 2rem;
   margin-bottom: 1.2rem;
   letter-spacing: 4px;
@@ -68,14 +69,16 @@
   font-size: 0.9rem;
   line-height: 1.7;
   max-width: 320px;
+  color: var(--text-secondary);
 }
 
 .section-title {
-  color: white;
+  color: var(--text-primary);             /* ✅ era 'white' hardcodeado */
   font-size: 1.1rem;
   margin-bottom: 1.8rem;
   letter-spacing: 2px;
   text-transform: uppercase;
+  font-family: var(--font-gothic);
 }
 
 .footer-links {
@@ -88,23 +91,24 @@
 }
 
 .footer-links a {
-  color: var(--text-soft);
+  color: var(--text-secondary);           /* ✅ era --text-soft */
   text-decoration: none;
   font-size: 0.9rem;
   transition: all 0.3s ease;
 }
 
 .footer-links a:hover {
-  color: var(--gothic-purple);
+  color: var(--accent);                   /* ✅ era --gothic-purple */
   padding-left: 8px;
 }
 
 .footer-bottom {
   margin-top: 4rem;
   padding-top: 2rem;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--border-light); /* ✅ era --border */
   text-align: center;
   font-size: 0.8rem;
+  color: var(--text-secondary);
   opacity: 0.6;
 }
 
