@@ -5,8 +5,9 @@
       
       <form @submit.prevent="handleRegistro" class="auth-form">
         <div class="input-group">
-          <label>Usuario</label>
-          <input v-model="form.username" type="text" required>
+          <label>Nombre de usuario</label>
+          <!-- ✅ CORREGIDO: v-model apunta a form.nombre (antes era form.username) -->
+          <input v-model="form.nombre" type="text" required>
         </div>
 
         <div class="input-group">
@@ -19,8 +20,10 @@
           <input v-model="form.password" type="password" required>
         </div>
 
+        <p v-if="error" class="error-msg">{{ error }}</p>
+
         <button type="submit" class="btn-auth" :disabled="loading">
-          Registrarme
+          {{ loading ? 'Creando cuenta...' : 'Registrarme' }}
         </button>
 
         <div class="auth-footer">
@@ -36,18 +39,24 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { registro } from '@/api'
 
-const router = useRouter()
+const router  = useRouter()
 const loading = ref(false)
-const form = ref({ username: '', email: '', password: '' })
+const error   = ref(null)
+
+// ✅ CORREGIDO: el objeto usa "nombre", que es lo que espera el schema UsuarioRegistro
+const form = ref({ nombre: '', email: '', password: '' })
 
 const handleRegistro = async () => {
+  error.value = null
+  loading.value = true
   try {
-    loading.value = true
     await registro(form.value)
-    alert("Cuenta creada con éxito. Ahora inicia sesión.")
+    // Redirigir al login tras registro exitoso
     router.push('/login')
   } catch (err) {
-    alert("Error al crear la cuenta. Puede que el usuario ya exista.")
+    // Mostrar el error en pantalla en lugar de alert()
+    const detail = err.response?.data?.detail
+    error.value = detail || "Error al crear la cuenta. Puede que el email ya exista."
   } finally {
     loading.value = false
   }
@@ -74,12 +83,6 @@ const handleRegistro = async () => {
   text-align: center;
 }
 
-.auth-subtitle {
-  color: var(--text-secondary);
-  font-style: italic;
-  margin-bottom: 2rem;
-}
-
 .input-group {
   text-align: left;
   margin-bottom: 1.5rem;
@@ -101,6 +104,7 @@ const handleRegistro = async () => {
   color: white;
   border-radius: 4px;
   transition: border 0.3s;
+  box-sizing: border-box;
 }
 
 .input-group input:focus {
@@ -126,6 +130,12 @@ const handleRegistro = async () => {
   transform: scale(1.02);
 }
 
+.btn-auth:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .auth-footer {
   margin-top: 2rem;
   font-size: 0.9rem;
@@ -134,12 +144,12 @@ const handleRegistro = async () => {
 .link-accent {
   color: var(--accent);
   text-decoration: none;
-  margin-left: 0.5rem;
 }
 
 .error-msg {
   color: #ff4444;
   margin-top: 1rem;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
+  text-align: left;
 }
 </style>

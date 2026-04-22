@@ -9,6 +9,8 @@ import CategoriasView from '@/views/CategoriasView.vue'
 import RegistroView   from '@/views/RegistroView.vue'
 import AdminView      from '@/views/AdminView.vue' 
 import CarritoView    from '@/views/CarritoView.vue'
+// 1. Importa la nueva vista de Checkout
+import CheckoutView   from '@/views/CheckoutView.vue' 
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -19,6 +21,15 @@ const router = createRouter({
     { path: '/productos',  name: 'productos',  component: ProductosView },
     { path: '/categorias', name: 'categorias', component: CategoriasView },
     { path: '/carrito',    name: 'carrito',    component: CarritoView },
+    
+    // 2. Nueva ruta de Checkout con protección de autenticación
+    { 
+      path: '/checkout',   
+      name: 'checkout',   
+      component: CheckoutView,
+      meta: { requiresAuth: true } 
+    },
+
     { 
       path: '/admin',      
       name: 'admin',      
@@ -28,37 +39,35 @@ const router = createRouter({
   ]
 })
 
-// GUARDIA DE NAVEGACIÓN MODERNA
+// GUARDIA DE NAVEGACIÓN ACTUALIZADA
 router.beforeEach(async (to, from) => {
   const authStore = useAuthStore()
+  const token = localStorage.getItem('token')
 
-  // 1. Si la ruta requiere privilegios de Administrador
-  if (to.meta.requiresAdmin) {
-    const token = localStorage.getItem('token')
-
-    // Si no hay token, ni siquiera intentamos cargar al usuario
+  // 3. Si la ruta requiere estar logueado (como el Checkout)
+  if (to.meta.requiresAuth || to.meta.requiresAdmin) {
+    
     if (!token) {
-      console.warn("Acceso denegado: Inicie sesión como Administrador.")
-      return { name: 'login' } // Redirige al login
+      console.warn("Acceso denegado: Debes iniciar sesión.")
+      return { name: 'login' }
     }
 
-    // Si hay token pero no tenemos los datos del usuario (ej. tras un F5), los recuperamos
+    // Recuperamos el usuario si no está en el store (tras un refresh)
     if (!authStore.usuario) {
       try {
         await authStore.fetchUsuario()
       } catch (error) {
+        localStorage.removeItem('token')
         return { name: 'login' }
       }
     }
 
-    // Verificamos si el usuario tiene rango de admin
-    if (!authStore.usuario?.es_admin) {
+    // 4. Verificamos específicamente si requiere admin
+    if (to.meta.requiresAdmin && !authStore.usuario?.es_admin) {
       console.warn("Acceso denegado: Se requiere rango de Administrador †")
-      return { name: 'home' } // Expulsado a la Home
+      return { name: 'home' }
     }
   }
-
-  // Si no se retorna nada, la navegación continúa normalmente (reemplaza a next())
 })
 
 export default router
