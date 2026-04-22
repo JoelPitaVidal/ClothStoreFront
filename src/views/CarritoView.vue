@@ -10,11 +10,11 @@
 
       <div v-if="cartStore.loading && (!cartStore.items || cartStore.items.length === 0)" class="loading-state">
         <div class="spinner"></div>
-        <p>Cargando productos...</p>
+        <p>Invocando productos...</p>
       </div>
 
       <div v-else-if="!cartStore.items || cartStore.items.length === 0" class="empty-state">
-        <p>Tu carrito está actualmente vacío.</p>
+        <p class="empty-text">Tu carrito está actualmente vacío.</p>
         <RouterLink to="/productos" class="btn-primary-gothic">Ver Catálogo</RouterLink>
       </div>
 
@@ -33,7 +33,7 @@
               <div class="item-info">
                 <h3 class="product-name">{{ item.producto?.nombre || item.productos?.nombre }}</h3>
                 <p class="product-category">
-                  Categoría: {{ item.producto?.categoria?.nombre || item.productos?.categoria?.nombre || 'General' }}
+                  {{ item.producto?.categoria?.nombre || item.productos?.categoria?.nombre || 'Reliquia' }}
                 </p>
                 
                 <div class="quantity-wrapper">
@@ -55,7 +55,7 @@
                   {{ ((item.producto?.precio || item.productos?.precio || 0) * item.cantidad).toFixed(2) }}€
                 </p>
                 <button class="btn-delete" @click="eliminar(item.id)">
-                  <span>Quitar</span>
+                  Quitar
                 </button>
               </div>
             </template>
@@ -81,13 +81,13 @@
               <hr class="summary-divider">
               <div class="summary-row total">
                 <span>Total</span>
-                <span>{{ (cartStore.totalPrecio || 0).toFixed(2) }}€</span>
+                <span class="total-amount">{{ (cartStore.totalPrecio || 0).toFixed(2) }}€</span>
               </div>
             </div>
             <button class="btn-checkout" @click="procederAlPago">
               Tramitar Pedido
             </button>
-            <p class="secure-text">Pagos seguros y encriptados</p>
+            <p class="secure-text">🔒 Pagos seguros y encriptados</p>
           </div>
         </aside>
       </div>
@@ -97,10 +97,9 @@
 
 <script setup>
 import { onMounted } from 'vue'
-import { useRouter } from 'vue-router' // 1. Importar useRouter
+import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 
-// 2. Inicializar router y store
 const router = useRouter()
 const cartStore = useCartStore()
 
@@ -110,72 +109,344 @@ onMounted(() => {
 
 async function actualizar(item, nuevaCantidad) {
   if (item.id && nuevaCantidad > 0) {
-    // Usamos el ID del item del carrito, no el ID del producto
     await cartStore.actualizarCantidad(item.id, nuevaCantidad)
   }
 }
 
 async function eliminar(id) {
-  if (confirm("¿Deseas eliminar este producto del carrito?")) {
+  if (confirm("¿Deseas retirar esta pieza de tu colección?")) {
     await cartStore.eliminarProducto(id)
   }
 }
 
 async function vaciar() {
-  if (confirm("¿Estás seguro de que deseas vaciar todo el carrito?")) {
+  if (confirm("¿Limpiar por completo tu selección actual?")) {
     await cartStore.limpiarCarrito()
   }
 }
 
 function procederAlPago() {
-  // Ahora router está definido y funcionará correctamente
   router.push('/checkout')
 }
 </script>
 
 <style scoped>
-/* Los estilos se mantienen igual ya que estaban correctos visualmente */
-.cart-page { min-height: 100vh; padding-top: 100px; padding-bottom: 3rem; background-color: #050505; color: #e0d5e8; }
-.container { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
-.cart-title-section { text-align: left; margin-bottom: 2.5rem; border-bottom: 1px solid #1a1a1a; padding-bottom: 1rem; }
-.title-gothic { font-family: 'Cinzel', serif; font-size: 2rem; color: #8121d0; text-transform: uppercase; letter-spacing: 2px; }
-.subtitle { color: #a394ac; font-size: 0.9rem; margin-top: 0.5rem; }
-.cart-grid { display: grid; grid-template-columns: 1fr 350px; gap: 2.5rem; align-items: start; }
-.cart-item { display: flex; gap: 1.5rem; background: rgba(15, 15, 15, 0.6); border: 1px solid #1a1a1a; padding: 1.2rem; margin-bottom: 1rem; border-radius: 2px; align-items: center; }
-.item-img-container { width: 90px; height: 110px; flex-shrink: 0; overflow: hidden; border: 1px solid #333; }
-.item-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.8); transition: 0.3s; }
-.item-info { flex: 1; }
-.product-name { font-family: 'Cinzel', serif; font-size: 1rem; color: #e0d5e8; margin-bottom: 0.2rem; }
-.product-category { font-size: 0.7rem; color: #8121d0; text-transform: uppercase; margin-bottom: 1rem; }
-.quantity-wrapper { display: flex; align-items: center; gap: 0.8rem; background: #000; width: fit-content; border: 1px solid #222; }
-.qty-btn { background: transparent; border: none; color: #8121d0; width: 30px; height: 30px; cursor: pointer; font-size: 1.2rem; }
-.qty-btn:hover:not(:disabled) { background: #8121d0; color: white; }
-.qty-btn:disabled { color: #444; cursor: not-allowed; }
-.qty-number { font-family: 'monospace'; min-width: 20px; text-align: center; }
-.item-price-actions { text-align: right; display: flex; flex-direction: column; gap: 1rem; }
-.subtotal { font-size: 1.1rem; font-weight: bold; color: #e0d5e8; }
-.btn-delete { background: transparent; border: none; color: #777; font-size: 0.7rem; cursor: pointer; text-transform: uppercase; text-decoration: underline; }
-.btn-delete:hover { color: #ff4444; }
-.btn-clear { background: transparent; border: 1px solid #222; color: #777; padding: 0.5rem 1rem; font-size: 0.7rem; cursor: pointer; transition: 0.3s; }
-.btn-clear:hover { border-color: #555; color: #ccc; }
-.summary-card { background: #0a0a0a; border: 1px solid #1a1a1a; padding: 1.5rem; position: sticky; top: 120px; }
-.summary-title { font-family: 'Cinzel', serif; font-size: 1.1rem; color: #8121d0; margin-bottom: 1.5rem; text-transform: uppercase; }
-.summary-row { display: flex; justify-content: space-between; margin-bottom: 0.8rem; font-size: 0.85rem; color: #a394ac; }
-.summary-divider { border: 0; border-top: 1px solid #1a1a1a; margin: 1rem 0; }
-.summary-row.total { font-size: 1.3rem; color: #fff; font-family: 'Cinzel', serif; }
-.btn-checkout { width: 100%; background: #8121d0; color: #fff; border: none; padding: 1rem; font-family: 'Cinzel', serif; text-transform: uppercase; cursor: pointer; margin-top: 1.5rem; transition: 0.3s; }
-.btn-checkout:hover { background: #9d3df0; }
-.secure-text { font-size: 0.7rem; color: #555; text-align: center; margin-top: 1rem; }
-.empty-state { text-align: center; padding: 8rem 0; }
-.btn-primary-gothic { display: inline-block; background: transparent; border: 1px solid #8121d0; color: #8121d0; padding: 0.8rem 2rem; text-decoration: none; font-family: 'Cinzel', serif; margin-top: 1.5rem; transition: 0.3s; }
-.btn-primary-gothic:hover { background: #8121d0; color: white; }
-.loading-state { text-align: center; padding: 5rem; }
-.spinner { width: 40px; height: 40px; border: 3px solid rgba(129, 33, 208, 0.2); border-top-color: #8121d0; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
+.cart-page {
+  min-height: 100vh;
+  padding-top: 120px;
+  padding-bottom: 5rem;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.cart-title-section {
+  text-align: left;
+  margin-bottom: 2.5rem;
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 1rem;
+}
+
+.title-gothic {
+  font-family: 'Cinzel', serif;
+  font-size: 2.2rem;
+  color: var(--accent-color);
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  font-family: 'Cinzel', serif;
+}
+
+/* GRID */
+.cart-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 3rem;
+  align-items: start;
+}
+
+/* ITEMS */
+.cart-item {
+  display: flex;
+  gap: 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  align-items: center;
+  transition: transform 0.3s ease;
+}
+
+.cart-item:hover {
+  border-color: var(--accent-color);
+}
+
+.item-img-container {
+  width: 100px;
+  height: 130px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+}
+
+.item-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: 0.5s ease;
+}
+
+.item-info {
+  flex: 1;
+}
+
+.product-name {
+  font-family: 'Cinzel', serif;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  margin-bottom: 0.3rem;
+}
+
+.product-category {
+  font-size: 0.7rem;
+  color: var(--accent-color);
+  text-transform: uppercase;
+  margin-bottom: 1.2rem;
+  letter-spacing: 1px;
+}
+
+/* CANTIDAD */
+.quantity-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--bg-primary);
+  width: fit-content;
+  border: 1px solid var(--border-light);
+}
+
+.qty-btn {
+  background: transparent;
+  border: none;
+  color: var(--accent-color);
+  width: 35px;
+  height: 35px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: 0.2s;
+}
+
+.qty-btn:hover:not(:disabled) {
+  background: var(--accent-color);
+  color: white;
+}
+
+.qty-btn:disabled {
+  color: var(--text-secondary);
+  opacity: 0.3;
+}
+
+.qty-number {
+  font-family: 'Cinzel', serif;
+  font-weight: bold;
+}
+
+/* PRECIO Y ACCIONES */
+.item-price-actions {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.subtotal {
+  font-size: 1.2rem;
+  font-weight: bold;
+  font-family: 'Cinzel', serif;
+  color: var(--text-primary);
+}
+
+.btn-delete {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  text-decoration: underline;
+  transition: 0.3s;
+}
+
+.btn-delete:hover {
+  color: #ff4444;
+}
+
+.btn-clear {
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  padding: 0.6rem 1.2rem;
+  font-size: 0.75rem;
+  font-family: 'Cinzel', serif;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-clear:hover {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+/* RESUMEN (SIDEBAR) */
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  padding: 2rem;
+  position: sticky;
+  top: 130px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.summary-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.2rem;
+  color: var(--accent-color);
+  margin-bottom: 2rem;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 0.5rem;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.free {
+  color: #2ecc71;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.summary-divider {
+  border: 0;
+  border-top: 1px solid var(--border-light);
+  margin: 1.5rem 0;
+}
+
+.summary-row.total {
+  font-size: 1.4rem;
+  color: var(--text-primary);
+  font-family: 'Cinzel', serif;
+  margin-top: 1rem;
+}
+
+.total-amount {
+  color: var(--accent-color);
+}
+
+.btn-checkout {
+  width: 100%;
+  background: var(--accent-color);
+  color: #fff;
+  border: none;
+  padding: 1.2rem;
+  font-family: 'Cinzel', serif;
+  text-transform: uppercase;
+  font-size: 1rem;
+  letter-spacing: 2px;
+  cursor: pointer;
+  margin-top: 2rem;
+  transition: 0.3s;
+}
+
+.btn-checkout:hover {
+  filter: brightness(1.2);
+  box-shadow: 0 5px 15px rgba(129, 33, 208, 0.3);
+}
+
+.secure-text {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: 1.5rem;
+  opacity: 0.7;
+}
+
+/* ESTADOS VACÍOS/CARGA */
+.empty-state {
+  text-align: center;
+  padding: 10rem 0;
+}
+
+.empty-text {
+  font-family: 'Cinzel', serif;
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.btn-primary-gothic {
+  display: inline-block;
+  background: transparent;
+  border: 1px solid var(--accent-color);
+  color: var(--accent-color);
+  padding: 1rem 2.5rem;
+  text-decoration: none;
+  font-family: 'Cinzel', serif;
+  margin-top: 1.5rem;
+  transition: 0.3s;
+}
+
+.btn-primary-gothic:hover {
+  background: var(--accent-color);
+  color: white;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 8rem;
+  color: var(--text-secondary);
+  font-family: 'Cinzel', serif;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid var(--border-light);
+  border-top-color: var(--accent-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1.5rem;
+}
+
 @keyframes spin { to { transform: rotate(360deg); } }
 
-@media (max-width: 850px) {
+/* RESPONSIVE */
+@media (max-width: 900px) {
   .cart-grid { grid-template-columns: 1fr; }
-  .summary-card { position: static; margin-top: 2rem; }
+  .summary-card { position: static; margin-top: 3rem; }
+  .cart-item { flex-direction: row; align-items: flex-start; }
+}
+
+@media (max-width: 600px) {
   .cart-item { flex-direction: column; text-align: center; }
+  .item-img-container { margin: 0 auto; }
+  .quantity-wrapper { margin: 1rem auto; }
+  .item-price-actions { text-align: center; margin-top: 1rem; border-top: 1px solid var(--border-light); padding-top: 1rem; }
 }
 </style>
