@@ -84,4 +84,24 @@ export const verificarPagoPaypal = (orderId, pedidoId) =>
     pedido_id: pedidoId 
   })
 
+  // En tu archivo de configuración de API (ej. src/api/index.js)
+export const descargarFactura = (pedidoId) => {
+    // Usamos window.open directamente porque el navegador debe manejar la descarga del PDF
+    const token = localStorage.getItem('token'); // O como guardes tu JWT
+    const url = `http://127.0.0.1:8000/pagos/descargar-factura/${pedidoId}?token=${token}`;
+    window.open(url, '_blank');
+};
+
+// Alternativa más segura con Headers:
+// En api/index.js
+export const obtenerFacturaBlob = (pedidoId) => {
+    // IMPORTANTE: Si tu router de pagos tiene prefix="/pagos", 
+    // la URL debe incluirlo: /pagos/descargar-factura/
+    return api.get(`/pagos/descargar-factura/${pedidoId}`, {
+        responseType: 'blob' 
+    });
+};
+
+
+
 export default api
