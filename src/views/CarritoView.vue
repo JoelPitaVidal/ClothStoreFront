@@ -4,13 +4,13 @@
       <header class="cart-title-section">
         <h1 class="title-gothic">Mi Carrito</h1>
         <p v-if="cartStore.items?.length > 0" class="subtitle">
-          Tienes {{ cartStore.totalItems }} producto(s) en tu selección
+          Tienes {{ cartStore.totalItems }} producto(s) en su selección
         </p>
       </header>
 
       <div v-if="cartStore.loading && (!cartStore.items || cartStore.items.length === 0)" class="loading-state">
         <div class="spinner"></div>
-        <p>Invocando productos...</p>
+        <p>Sincronizando productos...</p>
       </div>
 
       <div v-else-if="!cartStore.items || cartStore.items.length === 0" class="empty-state">
@@ -33,7 +33,7 @@
               <div class="item-info">
                 <h3 class="product-name">{{ item.producto?.nombre || item.productos?.nombre }}</h3>
                 <p class="product-category">
-                  {{ item.producto?.categoria?.nombre || item.productos?.categoria?.nombre || 'Reliquia' }}
+                  Categoría: {{ item.producto?.categoria?.nombre || item.productos?.categoria?.nombre || 'General' }}
                 </p>
                 
                 <div class="quantity-wrapper">
@@ -84,9 +84,15 @@
                 <span class="total-amount">{{ (cartStore.totalPrecio || 0).toFixed(2) }}€</span>
               </div>
             </div>
-            <button class="btn-checkout" @click="procederAlPago">
-              Tramitar Pedido
+
+            <button 
+              class="btn-checkout" 
+              @click="procederAlPago"
+              :disabled="cartStore.loading || cartStore.items.length === 0"
+            >
+              {{ cartStore.loading ? 'PROCESANDO...' : 'Tramitar Pedido' }}
             </button>
+            
             <p class="secure-text">🔒 Pagos seguros y encriptados</p>
           </div>
         </aside>
@@ -103,8 +109,12 @@ import { useCartStore } from '@/stores/cart'
 const router = useRouter()
 const cartStore = useCartStore()
 
-onMounted(() => {
-  cartStore.fetchCarrito()
+onMounted(async () => {
+  try {
+    await cartStore.fetchCarrito()
+  } catch (error) {
+    console.error("[Cart] Error inicial:", error)
+  }
 })
 
 async function actualizar(item, nuevaCantidad) {
@@ -114,19 +124,38 @@ async function actualizar(item, nuevaCantidad) {
 }
 
 async function eliminar(id) {
-  if (confirm("¿Deseas retirar esta pieza de tu colección?")) {
+  if (confirm("¿Deseas eliminar este producto del carrito?")) {
     await cartStore.eliminarProducto(id)
   }
 }
 
 async function vaciar() {
-  if (confirm("¿Limpiar por completo tu selección actual?")) {
+  if (confirm("¿Estás seguro de que deseas vaciar todo el carrito?")) {
     await cartStore.limpiarCarrito()
   }
 }
 
+/**
+ * Lógica de navegación profesional con manejo de errores
+ */
 function procederAlPago() {
+  console.log("[Cart] Intentando navegar al checkout...");
+
+  if (!cartStore.items || cartStore.items.length === 0) {
+    console.warn("[Cart] Intento de pago con carrito vacío.");
+    return;
+  }
+
+  // Intentamos navegación por router (SPA)
   router.push('/checkout')
+    .then(() => {
+      console.log("[Cart] Navegación exitosa.");
+    })
+    .catch((err) => {
+      console.error("[Cart] Error de router, intentando navegación forzada:", err);
+      // Fallback: Si el router falla, forzamos la carga de la URL
+      window.location.href = '/checkout';
+    });
 }
 </script>
 
@@ -168,7 +197,6 @@ function procederAlPago() {
   font-family: 'Cinzel', serif;
 }
 
-/* GRID */
 .cart-grid {
   display: grid;
   grid-template-columns: 1fr 360px;
@@ -176,7 +204,6 @@ function procederAlPago() {
   align-items: start;
 }
 
-/* ITEMS */
 .cart-item {
   display: flex;
   gap: 1.5rem;
@@ -185,11 +212,6 @@ function procederAlPago() {
   padding: 1.5rem;
   margin-bottom: 1rem;
   align-items: center;
-  transition: transform 0.3s ease;
-}
-
-.cart-item:hover {
-  border-color: var(--accent-color);
 }
 
 .item-img-container {
@@ -204,7 +226,6 @@ function procederAlPago() {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: 0.5s ease;
 }
 
 .item-info {
@@ -226,7 +247,6 @@ function procederAlPago() {
   letter-spacing: 1px;
 }
 
-/* CANTIDAD */
 .quantity-wrapper {
   display: flex;
   align-items: center;
@@ -244,7 +264,6 @@ function procederAlPago() {
   height: 35px;
   cursor: pointer;
   font-size: 1.2rem;
-  transition: 0.2s;
 }
 
 .qty-btn:hover:not(:disabled) {
@@ -252,17 +271,6 @@ function procederAlPago() {
   color: white;
 }
 
-.qty-btn:disabled {
-  color: var(--text-secondary);
-  opacity: 0.3;
-}
-
-.qty-number {
-  font-family: 'Cinzel', serif;
-  font-weight: bold;
-}
-
-/* PRECIO Y ACCIONES */
 .item-price-actions {
   text-align: right;
   display: flex;
@@ -274,7 +282,6 @@ function procederAlPago() {
   font-size: 1.2rem;
   font-weight: bold;
   font-family: 'Cinzel', serif;
-  color: var(--text-primary);
 }
 
 .btn-delete {
@@ -283,80 +290,7 @@ function procederAlPago() {
   color: var(--text-secondary);
   font-size: 0.75rem;
   cursor: pointer;
-  text-transform: uppercase;
   text-decoration: underline;
-  transition: 0.3s;
-}
-
-.btn-delete:hover {
-  color: #ff4444;
-}
-
-.btn-clear {
-  background: transparent;
-  border: 1px solid var(--border-light);
-  color: var(--text-secondary);
-  padding: 0.6rem 1.2rem;
-  font-size: 0.75rem;
-  font-family: 'Cinzel', serif;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.btn-clear:hover {
-  border-color: var(--accent-color);
-  color: var(--accent-color);
-}
-
-/* RESUMEN (SIDEBAR) */
-.summary-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-light);
-  padding: 2rem;
-  position: sticky;
-  top: 130px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-}
-
-.summary-title {
-  font-family: 'Cinzel', serif;
-  font-size: 1.2rem;
-  color: var(--accent-color);
-  margin-bottom: 2rem;
-  text-transform: uppercase;
-  border-bottom: 1px solid var(--border-light);
-  padding-bottom: 0.5rem;
-}
-
-.summary-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-}
-
-.free {
-  color: #2ecc71;
-  font-weight: bold;
-  text-transform: uppercase;
-}
-
-.summary-divider {
-  border: 0;
-  border-top: 1px solid var(--border-light);
-  margin: 1.5rem 0;
-}
-
-.summary-row.total {
-  font-size: 1.4rem;
-  color: var(--text-primary);
-  font-family: 'Cinzel', serif;
-  margin-top: 1rem;
-}
-
-.total-amount {
-  color: var(--accent-color);
 }
 
 .btn-checkout {
@@ -374,59 +308,29 @@ function procederAlPago() {
   transition: 0.3s;
 }
 
-.btn-checkout:hover {
-  filter: brightness(1.2);
-  box-shadow: 0 5px 15px rgba(129, 33, 208, 0.3);
+.btn-checkout:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-.secure-text {
-  font-size: 0.7rem;
-  color: var(--text-secondary);
-  text-align: center;
-  margin-top: 1.5rem;
-  opacity: 0.7;
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  padding: 2rem;
+  position: sticky;
+  top: 130px;
 }
 
-/* ESTADOS VACÍOS/CARGA */
-.empty-state {
-  text-align: center;
-  padding: 10rem 0;
-}
-
-.empty-text {
-  font-family: 'Cinzel', serif;
-  font-size: 1.2rem;
-  color: var(--text-secondary);
-  margin-bottom: 1rem;
-}
-
-.btn-primary-gothic {
-  display: inline-block;
-  background: transparent;
-  border: 1px solid var(--accent-color);
-  color: var(--accent-color);
-  padding: 1rem 2.5rem;
-  text-decoration: none;
-  font-family: 'Cinzel', serif;
-  margin-top: 1.5rem;
-  transition: 0.3s;
-}
-
-.btn-primary-gothic:hover {
-  background: var(--accent-color);
-  color: white;
-}
-
-.loading-state {
-  text-align: center;
-  padding: 8rem;
-  color: var(--text-secondary);
+.summary-row.total {
+  font-size: 1.4rem;
+  color: var(--text-primary);
   font-family: 'Cinzel', serif;
 }
+
+.total-amount { color: var(--accent-color); }
 
 .spinner {
-  width: 50px;
-  height: 50px;
+  width: 50px; height: 50px;
   border: 3px solid var(--border-light);
   border-top-color: var(--accent-color);
   border-radius: 50%;
@@ -436,17 +340,8 @@ function procederAlPago() {
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* RESPONSIVE */
 @media (max-width: 900px) {
   .cart-grid { grid-template-columns: 1fr; }
   .summary-card { position: static; margin-top: 3rem; }
-  .cart-item { flex-direction: row; align-items: flex-start; }
-}
-
-@media (max-width: 600px) {
-  .cart-item { flex-direction: column; text-align: center; }
-  .item-img-container { margin: 0 auto; }
-  .quantity-wrapper { margin: 1rem auto; }
-  .item-price-actions { text-align: center; margin-top: 1rem; border-top: 1px solid var(--border-light); padding-top: 1rem; }
 }
 </style>

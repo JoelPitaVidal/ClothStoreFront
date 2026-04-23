@@ -68,8 +68,9 @@ export const actualizarCantidadCarrito = (productoId, cantidad) =>
   api.patch(`/carrito/items/${productoId}`, { cantidad })
 
 // Pedidos
-export const crearPedido = () => api.post('/pedidos')
-export const getMisPedidos = () => api.get('/pedidos')
+// CAMBIO: Añadir la / al final de la ruta
+export const crearPedido = () => api.post('/pedidos/'); 
+export const getMisPedidos = () => api.get('/pedidos/');
 export const actualizarEstadoPedido = (id, estado) => api.patch(`/pedidos/${id}/estado`, { estado })
 
 // Pagos (Ajustados para coincidir con el Backend)

@@ -1,45 +1,62 @@
 <template>
-  <div class="cart-page">
+  <div class="checkout-page">
     <div class="container">
-      <header class="cart-title-section">
-        <h1 class="title-gothic">Finalizar Pedido</h1>
-        <p class="subtitle">Selecciona tu método de pago para completar la adquisición</p>
+      <header class="checkout-header">
+        <h1 class="page-title">Finalizar Pedido</h1>
+        <p class="page-subtitle">Complete los detalles de pago para procesar su compra</p>
       </header>
 
-      <div class="cart-grid">
-        <main class="payment-methods">
-          <div class="payment-card stripe-section">
-            <h2 class="summary-title">Tarjeta de Crédito / Débito</h2>
-            
-            <div id="payment-element" class="stripe-input-container"></div>
-            
-            <div id="payment-message" class="error-text"></div>
-            
-            <button 
-              @click="pagarConStripe" 
-              :disabled="loading || !stripeReady || !elementsReady" 
-              class="btn-checkout"
-            >
-              {{ loading ? 'Procesando Transacción...' : 'Confirmar Pago con Tarjeta' }}
-            </button>
-          </div>
+      <div class="checkout-grid">
+        <main class="payment-container">
+          <section class="payment-section">
+            <h2 class="section-title">Tarjeta de Crédito / Débito</h2>
 
-          <div class="payment-card">
-            <h2 class="summary-title">PayPal</h2>
-            <div id="paypal-button-container"></div>
-          </div>
-        </main>
-
-        <aside class="cart-summary">
-          <div class="summary-card">
-            <h2 class="summary-title">Resumen Final</h2>
-            <div class="summary-details">
-              <div class="summary-row total">
-                <span>Total del Pedido</span>
-                <span>{{ totalMostrado.toFixed(2) }}€</span>
+            <div id="payment-element" class="stripe-element-container">
+              <div v-if="!elementsReady" class="loading-overlay">
+                <div class="spinner"></div>
+                <span>Cargando pasarela de pago segura...</span>
               </div>
             </div>
-            <p class="secure-text">🔒 Conexión encriptada de extremo a extremo</p>
+
+            <div v-if="errorMsg" class="alert-error">{{ errorMsg }}</div>
+
+            <button
+              @click="pagarConStripe"
+              :disabled="loading || !stripeReady || !elementsReady"
+              class="btn-primary"
+            >
+              <span v-if="loading" class="spinner-button"></span>
+              {{ loading ? 'Procesando pago...' : 'Pagar ahora con tarjeta' }}
+            </button>
+          </section>
+
+          <section class="payment-section">
+            <h2 class="section-title">PayPal</h2>
+            <div id="paypal-button-container"></div>
+          </section>
+        </main>
+
+        <aside class="summary-container">
+          <div class="summary-box">
+            <h2 class="section-title">Resumen de la transacción</h2>
+            <div class="summary-details">
+              <div class="summary-item">
+                <span>Productos:</span>
+                <span>{{ cartStore.totalItems }}</span>
+              </div>
+              <div class="summary-item">
+                <span>Gastos de envío:</span>
+                <span class="text-success">Gratis</span>
+              </div>
+              <div class="summary-divider"></div>
+              <div class="summary-item total">
+                <span>Total a pagar:</span>
+                <span class="total-price">{{ totalMostrado.toFixed(2) }}€</span>
+              </div>
+            </div>
+            <div class="security-info">
+              <p>🔒 Transacción segura mediante cifrado SSL de 256 bits</p>
+            </div>
           </div>
         </aside>
       </div>
@@ -48,100 +65,119 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, nextTick } from 'vue'  // ✅ nextTick añadido
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
-import * as api from '@/api/index' 
+import * as api from '@/api/index'
 import { loadStripe } from '@stripe/stripe-js'
 
 const cartStore = useCartStore()
 const router = useRouter()
 
-// Estados reactivos
 const loading = ref(false)
 const pedidoIdActivo = ref(null)
 const montoPedido = ref(0)
 const stripeReady = ref(null)
 const elementsReady = ref(null)
+const errorMsg = ref('')
 
 const totalMostrado = computed(() => {
   return cartStore.totalPrecio > 0 ? cartStore.totalPrecio : montoPedido.value
 })
 
 onMounted(async () => {
-  // 1. Cargar Stripe y asignarlo a la ref
-  stripeReady.value = await loadStripe('pk_test_51TObxb9kgrSKPXQeyU8gfL0Jn6KdhWRTK5Ek1KuSTq0bwsXKGfbNTa48KDiy0UEA3kCOeCVIQ6U5WihQv69rSnrz00XX2r4JnO')
-
   try {
-    let pedidoId;
+    // 1. Inicializar Stripe
+    stripeReady.value = await loadStripe('pk_test_51TObxb9kgrSKPXQeyU8gfL0Jn6KdhWRTK5Ek1KuSTq0bwsXKGfbNTa48KDiy0UEA3kCOeCVIQ6U5WihQv69rSnrz00XX2r4JnO')
+    if (!stripeReady.value) throw new Error("No se pudo inicializar Stripe.")
+
+    // 2. Crear o recuperar pedido
+    let pedidoId
     try {
       const pedidoRes = await api.crearPedido()
       pedidoId = pedidoRes.data.id
       montoPedido.value = pedidoRes.data.total
     } catch (err) {
-      // Intento recuperar pedido pendiente si el carrito está vacío
+      // Fallback: recuperar pedido pendiente si el carrito está vacío (F5)
       const misPedidos = await api.getMisPedidos()
       const pendiente = misPedidos.data.find(p => p.estado === 'pendiente')
       if (pendiente) {
         pedidoId = pendiente.id
         montoPedido.value = pendiente.total
       } else {
-        throw new Error("No hay productos ni pedidos pendientes")
+        throw new Error("No hay pedido activo ni carrito con productos.")
       }
     }
 
     pedidoIdActivo.value = pedidoId
 
-    // 2. Obtener Client Secret
+    // 3. Crear intento de pago en Stripe
     const intentRes = await api.crearIntentoStripe(pedidoId)
-    const clientSecret = intentRes.data.clientSecret
+    const clientSecret = intentRes.data.clientSecret || intentRes.data.client_secret
 
-    // 3. Crear elementos y asignarlos a la ref
-    elementsReady.value = stripeReady.value.elements({ 
+    if (!clientSecret) {
+      console.error("[Checkout] Respuesta recibida:", intentRes.data)
+      throw new Error("No se recibió el clientSecret de Stripe.")
+    }
+
+    // 4. Crear instancia de Elements
+    elementsReady.value = stripeReady.value.elements({
       clientSecret,
-      appearance: { theme: 'night', labels: 'floating' } 
+      appearance: {
+        theme: 'night',
+        variables: {
+          colorPrimary: '#8121d0',
+          colorBackground: '#1a1a1a',
+          colorText: '#ffffff',
+          fontFamily: 'Inter, system-ui, sans-serif',
+        }
+      }
     })
-    
+
+    // ✅ FIX CRÍTICO: Esperar a que Vue renderice el DOM antes de montar Stripe
+    await nextTick()
+
     const paymentElement = elementsReady.value.create('payment')
     paymentElement.mount('#payment-element')
 
-    // 4. PayPal
-    renderPayPal()
-    
+    if (window.paypal) renderPayPal()
+
   } catch (err) {
-    console.error("Error inicializando:", err)
-    alert("Error al cargar la pasarela de pago.")
+    console.error("[Checkout Error]:", err)
+    const mensaje = err?.response?.data?.detail || err?.message || "Error al inicializar el pago"
+    errorMsg.value = mensaje
+    alert(`Error: ${mensaje}`)
     router.push('/carrito')
   }
 })
 
 function renderPayPal() {
-  if (window.paypal && pedidoIdActivo.value) {
-    window.paypal.Buttons({
-      createOrder: async () => {
-        const intentRes = await api.crearIntentoPaypal(pedidoIdActivo.value)
-        return intentRes.data.paypal_order_id 
-      },
-      onApprove: async (data) => {
-        loading.value = true
-        try {
-          await api.confirmarPagoPaypal(data.orderID, pedidoIdActivo.value)
-          await cartStore.limpiarCarrito()
-          router.push({ path: '/pago-exitoso', query: { pedido_id: pedidoIdActivo.value }})
-        } catch (e) {
-          alert("Error al verificar el pago")
-        } finally {
-          loading.value = false
-        }
+  window.paypal.Buttons({
+    style: { layout: 'vertical', shape: 'rect' },
+    createOrder: async () => {
+      const intentRes = await api.crearIntentoPaypal(pedidoIdActivo.value)
+      return intentRes.data.paypal_order_id
+    },
+    onApprove: async (data) => {
+      loading.value = true
+      try {
+        await api.confirmarPagoPaypal(data.orderID, pedidoIdActivo.value)
+        await cartStore.limpiarCarrito()
+        router.push({ path: '/pago-exitoso', query: { pedido_id: pedidoIdActivo.value } })
+      } catch (e) {
+        alert("Error en la confirmación del pago. Por favor, contacte con soporte.")
+      } finally {
+        loading.value = false
       }
-    }).render('#paypal-button-container')
-  }
+    }
+  }).render('#paypal-button-container')
 }
 
 async function pagarConStripe() {
   if (loading.value || !stripeReady.value || !elementsReady.value) return
   loading.value = true
-  
+  errorMsg.value = ''
+
   try {
     const { error } = await stripeReady.value.confirmPayment({
       elements: elementsReady.value,
@@ -151,23 +187,143 @@ async function pagarConStripe() {
     })
 
     if (error) {
-      const messageContainer = document.querySelector('#payment-message')
-      if (messageContainer) messageContainer.textContent = error.message
-      loading.value = false
+      errorMsg.value = error.message
     }
   } catch (e) {
-    console.error("Error en el pago:", e)
+    console.error("[Stripe Submit Error]:", e)
+    errorMsg.value = "Error inesperado al procesar el pago."
+  } finally {
     loading.value = false
   }
 }
 </script>
 
 <style scoped>
-.cart-page { min-height: 100vh; padding: 40px 0; color: #e0d5e8; background: #050505; }
-.payment-card { background: rgba(15, 15, 15, 0.9); border: 1px solid #2a2a2a; padding: 2rem; margin-bottom: 2rem; border-radius: 4px; }
-.stripe-input-container { padding: 1rem; background: #000; border: 1px solid #444; border-radius: 4px; min-height: 40px; margin-bottom: 1.5rem; }
-.btn-checkout { width: 100%; padding: 1.2rem; background: #4b0082; color: white; border: none; font-family: 'Cinzel', serif; cursor: pointer; transition: 0.3s; font-size: 1.1rem; }
-.btn-checkout:hover:not(:disabled) { background: #6a0dad; box-shadow: 0 0 15px rgba(106, 13, 173, 0.4); }
-.btn-checkout:disabled { background: #222; color: #555; cursor: not-allowed; border: 1px solid #333; }
-.error-text { color: #ff4444; font-size: 0.85rem; margin-bottom: 15px; font-weight: bold; min-height: 20px; }
+.checkout-page {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  padding: 120px 20px 60px;
+}
+
+.container { max-width: 1100px; margin: 0 auto; }
+
+.checkout-header {
+  margin-bottom: 40px;
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 20px;
+}
+
+.page-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 8px; }
+.page-subtitle { color: var(--text-secondary); font-size: 0.95rem; }
+
+.checkout-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 30px;
+}
+
+.payment-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  padding: 30px;
+  margin-bottom: 25px;
+  border-radius: 4px;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 25px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stripe-element-container {
+  min-height: 200px;
+  margin-bottom: 25px;
+  padding: 15px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+}
+
+.loading-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 170px;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 15px;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.summary-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  padding: 25px;
+  position: sticky;
+  top: 130px;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.summary-divider { border-top: 1px solid var(--border-light); margin: 20px 0; }
+
+.summary-item.total { font-size: 1.2rem; font-weight: 700; color: var(--text-primary); }
+.total-price { color: var(--accent-color); }
+
+.security-info {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-light);
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.text-success { color: #2ecc71; }
+
+.alert-error {
+  color: #e74c3c;
+  margin-bottom: 15px;
+  font-size: 0.85rem;
+  padding: 10px;
+  border: 1px solid #e74c3c;
+  border-radius: 4px;
+}
+
+.spinner {
+  width: 35px; height: 35px;
+  border: 3px solid var(--border-light);
+  border-top-color: var(--accent-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 900px) {
+  .checkout-grid { grid-template-columns: 1fr; }
+  .summary-box { position: static; }
+}
 </style>
