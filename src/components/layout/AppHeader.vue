@@ -10,6 +10,12 @@
       <RouterLink to="/">Inicio</RouterLink>
       <RouterLink to="/categorias">Colecciones</RouterLink>
       <RouterLink to="/productos">Tienda</RouterLink>
+      
+      <RouterLink to="/newsletter" class="nav-news-link">
+        Newsletter
+        <span class="dot-new"></span>
+      </RouterLink>
+      
       <RouterLink 
         v-if="authStore.usuario?.es_admin" 
         to="/admin" 
@@ -20,14 +26,12 @@
     </nav>
 
     <div class="header-right">
-      <!-- INTERRUPTOR DE MODO -->
       <button class="mode-toggle-pill" @click="toggleMode" :title="isDark ? 'Modo Claro' : 'Modo Oscuro'">
         <div :class="['pill-indicator', { 'is-light': !isDark }]">
           <span class="mode-text">{{ isDark ? 'DARK' : 'LIGHT' }}</span>
         </div>
       </button>
 
-      <!-- CARRITO -->
       <button class="cart-btn" @click="irAlCarrito">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>
@@ -37,7 +41,6 @@
         </Transition>
       </button>
 
-      <!-- MENÚ DE USUARIO -->
       <div v-if="authStore.usuario" class="user-menu" @click="menuOpen = !menuOpen">
         <div class="avatar">{{ iniciales }}</div>
         <span class="user-name">{{ authStore.usuario.nombre }}</span>
@@ -53,7 +56,6 @@
         </Transition>
       </div>
 
-      <!-- BOTONES DE ACCESO Y REGISTRO -->
       <div v-else class="auth-links">
         <RouterLink to="/login" class="btn-ghost-nav">Acceder</RouterLink>
         <RouterLink to="/registro" class="btn-primary-auth">Registro</RouterLink>
@@ -117,7 +119,6 @@ onMounted(() => {
   transition: all 0.4s ease;
 }
 
-/* Variables dinámicas según el body */
 :global(body.light-mode) {
   --header-bg: rgba(255, 255, 255, 0.9);
   --header-border: rgba(0, 0, 0, 0.08);
@@ -126,18 +127,16 @@ onMounted(() => {
   --header-toggle-bg: #eee;
 }
 
-/* LOGO */
 .logo {
   font-family: 'Cinzel', serif;
   font-size: 1.4rem;
   color: var(--header-text, #fff);
   text-decoration: none;
   letter-spacing: 4px;
-  transition: color 0.3s ease;
 }
 .logo span { color: #8121d0; }
 
-/* NAVEGACIÓN CENTRAL */
+/* NAVEGACIÓN */
 .header-nav { display: flex; gap: 2rem; }
 .header-nav a {
   font-family: 'Inter', sans-serif;
@@ -149,16 +148,16 @@ onMounted(() => {
   font-weight: 500;
   transition: 0.3s;
 }
-.header-nav a:hover, .header-nav a.router-link-active { 
-  color: #8121d0; 
+.header-nav a:hover, .header-nav a.router-link-active { color: #8121d0; }
+
+/* NEWSLETTER DOT */
+.nav-news-link { position: relative; display: flex; align-items: center; }
+.dot-new {
+  width: 6px; height: 6px; background-color: #8121d0;
+  border-radius: 50%; margin-left: 5px; box-shadow: 0 0 8px #8121d0;
 }
 
-/* DERECHA (TOGGLE, CART, AUTH) */
-.header-right { 
-  display: flex; 
-  align-items: center; 
-  gap: 1.5rem; 
-}
+.header-right { display: flex; align-items: center; gap: 1.5rem; }
 
 /* MODO PILL */
 .mode-toggle-pill {
@@ -167,7 +166,6 @@ onMounted(() => {
   padding: 3px; border-radius: 20px;
   cursor: pointer; width: 65px; height: 28px;
   display: flex; align-items: center;
-  transition: all 0.3s ease;
 }
 .pill-indicator {
   background: #222; width: 100%; height: 100%;
@@ -178,106 +176,34 @@ onMounted(() => {
 .mode-text { font-family: 'Inter', sans-serif; font-size: 0.55rem; font-weight: 800; color: #fff; letter-spacing: 1px; }
 
 /* CARRITO */
-.cart-btn { background: transparent; border: none; cursor: pointer; color: var(--header-text, #fff); position: relative; display: flex; align-items: center; transition: color 0.3s; }
-.cart-btn:hover { color: #8121d0; }
+.cart-btn { background: transparent; border: none; cursor: pointer; color: var(--header-text, #fff); position: relative; display: flex; align-items: center; }
 .cart-badge {
   position: absolute; top: -8px; right: -8px;
   background: #8121d0; color: #fff; font-size: 0.6rem;
   width: 16px; height: 16px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-weight: bold;
 }
 
-/* AUTH LINKS (ACCEDER Y REGISTRO) */
-.auth-links {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
+.auth-links { display: flex; align-items: center; gap: 0.5rem; }
+.btn-ghost-nav { color: var(--header-text, #fff); text-decoration: none; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; padding: 0.6rem 1rem; }
+.btn-primary-auth { background: #8121d0; color: #fff !important; text-decoration: none; padding: 0.6rem 1.4rem; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; border-radius: 2px; }
 
-.btn-ghost-nav {
-  color: var(--header-text, #fff);
-  text-decoration: none;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  padding: 0.6rem 1rem;
-  transition: all 0.3s ease;
-}
-.btn-ghost-nav:hover { color: #8121d0; }
-
-.btn-primary-auth {
-  background: #8121d0;
-  color: #fff !important;
-  text-decoration: none;
-  padding: 0.6rem 1.4rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  border-radius: 2px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(129, 33, 208, 0.2);
-}
-.btn-primary-auth:hover {
-  background: #9d3fef;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 15px rgba(129, 33, 208, 0.4);
-}
-
-/* MENÚ DE USUARIO & DROPDOWN */
 .user-menu { position: relative; display: flex; align-items: center; gap: 0.8rem; cursor: pointer; }
-.avatar {
-  width: 32px; height: 32px; border: 1px solid #8121d0;
-  border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-size: 0.75rem; color: var(--header-text, #fff); font-weight: bold;
-}
-.user-name { font-size: 0.8rem; color: var(--header-text-muted, #a394ac); font-weight: 500; }
+.avatar { width: 32px; height: 32px; border: 1px solid #8121d0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--header-text, #fff); }
+.user-name { font-size: 0.8rem; color: var(--header-text-muted, #a394ac); }
 
 .dropdown {
   position: absolute; top: 55px; right: 0;
   background: var(--bg-card, #0a0a0a);
   border: 1px solid var(--header-border, #222);
-  min-width: 200px; 
-  box-shadow: 0 15px 35px rgba(0,0,0,0.4);
-  padding: 0.5rem 0;
-  border-radius: 4px;
-}
-:global(body.light-mode) .dropdown { 
-  background: #fff;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  min-width: 200px; padding: 0.5rem 0; border-radius: 4px;
 }
 
-.dropdown-header { padding: 0.8rem 1.2rem; font-size: 0.6rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-.dropdown a, .dropdown button {
-  display: block; width: 100%; padding: 0.8rem 1.2rem;
-  color: var(--header-text, #eee); text-decoration: none;
-  font-size: 0.8rem; border: none; background: transparent; text-align: left;
-  cursor: pointer; transition: 0.2s;
-}
-.dropdown a:hover, .dropdown button:hover { 
-  background: #8121d0; 
-  color: #fff; 
-}
-.dropdown-divider { height: 1px; background: var(--header-border, #222); margin: 0.5rem 0; }
+.dropdown a, .dropdown button { display: block; width: 100%; padding: 0.8rem 1.2rem; color: var(--header-text, #eee); text-decoration: none; font-size: 0.8rem; border: none; background: transparent; text-align: left; }
+.dropdown a:hover { background: #8121d0; color: #fff; }
 
-/* ANIMACIONES */
-.pop-enter-active { animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-@keyframes pop-in { 0% { transform: scale(0); } 100% { transform: scale(1); } }
-
-.fade-drop-enter-active, .fade-drop-leave-active { transition: all 0.2s ease; }
-.fade-drop-enter-from, .fade-drop-leave-to { opacity: 0; transform: translateY(-10px); }
-
-/* RESPONSIVE */
 @media (max-width: 1024px) {
   .header { padding: 0 2rem; }
   .header-nav, .user-name { display: none; }
-}
-
-@media (max-width: 480px) {
-  .logo { font-size: 1.1rem; letter-spacing: 2px; }
-  .auth-links { gap: 0.2rem; }
-  .btn-primary-auth { padding: 0.5rem 0.8rem; }
 }
 </style>

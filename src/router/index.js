@@ -32,21 +32,26 @@ const router = createRouter({
       component: PagoExitoso,
       meta: { requiresAuth: true } // Recomendado para que solo el dueño vea su éxito
     },
-    
-    // Nueva ruta de Checkout con protección
+  
     { 
       path: '/checkout',   
       name: 'checkout',   
       component: CheckoutView,
       meta: { requiresAuth: true } 
     },
-
     { 
       path: '/admin',      
       name: 'admin',      
       component: AdminView,
       meta: { requiresAdmin: true } 
+    },
+    {
+      path: '/newsletter',
+      name: 'Newsletter',
+      component: () => import('../views/NewsletterView.vue')
     }
+
+
   ]
 })
 
